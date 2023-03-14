@@ -18,7 +18,7 @@ sed -i '' 's/GITHASHHERE/'${GITHASH}'/' trackPairEfficiencyAnalysis.cxx
 make clean
 
 # Create the new tar ball
-tar -cvzf $OUTPUTTAR Makefile trackPairEfficiencyAnalysis.cxx src
+tar -cvzf $OUTPUTTAR Makefile trackPairEfficiencyAnalysis.cxx src trackCorrectionTables
 
 # Put placeholder string back to the main analysis file
 sed -i '' 's/'${GITHASH}'/GITHASHHERE/' trackPairEfficiencyAnalysis.cxx
