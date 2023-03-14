@@ -11,7 +11,7 @@
  *   const char* outputFileName = If we are producing output file, name of the output file
  *   int histogramSelection = If > 0, select a preset group of histograms. Intended to be used for easier production of output files.
  */
-void projectTriggerHistograms(TString inputFileName = "veryCoolData.root", const char* outputFileName = "veryCoolData_processed.root", int histogramSelection = 127){
+void projectTrackPairEfficiencyHistograms(TString inputFileName = "veryCoolData.root", const char* outputFileName = "veryCoolData_processed.root", int histogramSelection = 127){
 
   // Print the file name to console
   cout << "Projecting histograms from " << inputFileName.Data() << endl;
@@ -61,12 +61,15 @@ void projectTriggerHistograms(TString inputFileName = "veryCoolData.root", const
   // Option to read all the binning information from TrackPairEfficiencyCard used to create the file
   const bool readCentralityBinsFromFile = false;
   const bool readTrackPtBinsFromFile = true;
+  const bool readTrackPairPtBinsFromFile = true;
   
   // If not reading the bins from the file, manually define new bin borders
   const int nCentralityBins = 4;
   const int nTrackPtBins = 7;
-  double centralityBinBorders[nCentralityBins+1] = {0,10,30,50,90};   // Bin borders for centrality
-  double trackPtBinBorders[nTrackPtBins+1] = {0.7,1,2,3,4,8,12,300};  // Bin borders for track pT
+  const int nTrackPairPtBins = 7;
+  double centralityBinBorders[nCentralityBins+1] = {0,10,30,50,90};      // Bin borders for centrality
+  double trackPtBinBorders[nTrackPtBins+1] = {0.7,1,2,3,4,8,12,300};     // Bin borders for track pT
+  double trackPairPtBinBorders[nTrackPtBins+1] = {0.7,1,2,3,4,8,12,300}; // Bin borders for track pT in track pair histograms
   
   // Projected bin range
   int firstDrawnCentralityBin = 0;
@@ -74,6 +77,10 @@ void projectTriggerHistograms(TString inputFileName = "veryCoolData.root", const
   
   int firstDrawnTrackPtBin = 0;
   int lastDrawnTrackPtBin = nTrackPtBins-1;
+  
+  int firstDrawnTrackPairPtBin = 0;
+  int lastDrawnTrackPairPtBin = nTrackPairPtBins-1;
+
   
   // ==================================================================
   // ===================== Configuration ready ========================
@@ -102,6 +109,7 @@ void projectTriggerHistograms(TString inputFileName = "veryCoolData.root", const
   // If we change the binning, save the new binning to the card
   if(!readCentralityBinsFromFile) card->AddVector(TrackPairEfficiencyCard::kCentralityBinEdges,nCentralityBins+1,centralityBinBorders);
   if(!readTrackPtBinsFromFile) card->AddVector(TrackPairEfficiencyCard::kTrackPtBinEdges,nTrackPtBins+1,trackPtBinBorders);
+  if(!readTrackPairPtBinsFromFile) card->AddVector(TrackPairEfficiencyCard::kTrackPairPtBinEdges,nTrackPairPtBins+1,trackPairPtBinBorders);
   
   // Add information about the used input files to the card
   card->AddFileName(TrackPairEfficiencyCard::kInputFileName,inputFileName);
@@ -133,6 +141,8 @@ void projectTriggerHistograms(TString inputFileName = "veryCoolData.root", const
   if(!readCentralityBinsFromFile) histograms->SetCentralityBinRange(firstDrawnCentralityBin,lastDrawnCentralityBin);
   histograms->SetTrackPtBins(readTrackPtBinsFromFile,nTrackPtBins,trackPtBinBorders,true);
   if(!readTrackPtBinsFromFile) histograms->SetTrackPtBinRange(firstDrawnTrackPtBin,lastDrawnTrackPtBin);
+  histograms->SetTrackPairPtBins(readTrackPairPtBinsFromFile,nTrackPairPtBins,trackPairPtBinBorders,true);
+  if(!readTrackPairPtBinsFromFile) histograms->SetTrackPairPtBinRange(firstDrawnTrackPairPtBin,lastDrawnTrackPairPtBin);
   
   // Project the one dimensional histograms from the THnSparses
   histograms->LoadHistograms();

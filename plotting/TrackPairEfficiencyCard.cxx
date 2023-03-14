@@ -121,6 +121,11 @@ int TrackPairEfficiencyCard::GetNTrackPtBins() const{
   return GetNBins(kTrackPtBinEdges);
 }
 
+// Get the number of track pT bins in track pair histograms
+int TrackPairEfficiencyCard::GetNTrackPairPtBins() const{
+  return GetNBins(kTrackPairPtBinEdges);
+}
+
 /*
  * Get a bin index based on a given value.
  * If value is out of bound, return -1
@@ -152,6 +157,10 @@ int TrackPairEfficiencyCard::GetBinIndexTrackPt(const double value) const{
   return GetBinIndex(kTrackPtBinEdges,value);
 }
 
+// Get the bin index for a given track pT value in track pair histograms
+int TrackPairEfficiencyCard::GetBinIndexTrackPairPt(const double value) const{
+  return GetBinIndex(kTrackPairPtBinEdges,value);
+}
 
 // Get the low border of i:th bin from internal index
 double TrackPairEfficiencyCard::GetLowBinBorder(const int index, const int iBin) const{
@@ -175,6 +184,11 @@ double TrackPairEfficiencyCard::GetLowBinBorderTrackPt(const int iBin) const{
   return GetLowBinBorder(kTrackPtBinEdges,iBin);
 }
 
+// Get the low border of i:th track pT bin in track pair histograms
+double TrackPairEfficiencyCard::GetLowBinBorderTrackPairPt(const int iBin) const{
+  return GetLowBinBorder(kTrackPairPtBinEdges,iBin);
+}
+
 // Get the high border of i:th bin from internal index
 double TrackPairEfficiencyCard::GetHighBinBorder(const int index, const int iBin) const{
   
@@ -195,6 +209,11 @@ double TrackPairEfficiencyCard::GetHighBinBorderCentrality(const int iBin) const
 // Get the high border of i:th track pT bin
 double TrackPairEfficiencyCard::GetHighBinBorderTrackPt(const int iBin) const{
   return GetHighBinBorder(kTrackPtBinEdges,iBin);
+}
+
+// Get the high border of i:th track pT bin in track pair histograms
+double TrackPairEfficiencyCard::GetHighBinBorderTrackPairPt(const int iBin) const{
+  return GetHighBinBorder(kTrackPairPtBinEdges,iBin);
 }
 
 /*

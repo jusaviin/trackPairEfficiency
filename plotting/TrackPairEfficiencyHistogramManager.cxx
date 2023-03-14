@@ -24,8 +24,11 @@ TrackPairEfficiencyHistogramManager::TrackPairEfficiencyHistogramManager() :
   fLastLoadedCentralityBin(1),
   fFirstLoadedTrackPtBin(0),
   fLastLoadedTrackPtBin(1),
+  fFirstLoadedTrackPairPtBin(0),
+  fLastLoadedTrackPairPtBin(1),
   fnCentralityBins(kMaxCentralityBins),
-  fnTrackPtBins(kMaxTrackPtBins)
+  fnTrackPtBins(kMaxTrackPtBins),
+  fnTrackPairPtBins(kMaxTrackPtBins)
 {
   
   // Do not load tracks by default
@@ -48,6 +51,8 @@ TrackPairEfficiencyHistogramManager::TrackPairEfficiencyHistogramManager() :
   for(int iTrackPt = 0; iTrackPt < kMaxTrackPtBins + 1; iTrackPt++){
     fTrackPtBinIndices[iTrackPt] = iTrackPt + 1;
     fTrackPtBinBorders[iTrackPt] = 0;
+    fTrackPairPtBinIndices[iTrackPt] = iTrackPt + 1;
+    fTrackPairPtBinBorders[iTrackPt] = 0;
   }
   
   // Initialize all the other histograms to null
@@ -145,6 +150,7 @@ void TrackPairEfficiencyHistogramManager::InitializeFromCard(){
   // Read bins for centrality and track pT from the card
   fnCentralityBins = fCard->GetNCentralityBins();
   fnTrackPtBins = fCard->GetNTrackPtBins();
+  fnTrackPairPtBins = fCard->GetNTrackPairPtBins();
   
   // Centrality binning
   for(int iCentrality = 0; iCentrality <= fnCentralityBins; iCentrality++){
@@ -157,6 +163,12 @@ void TrackPairEfficiencyHistogramManager::InitializeFromCard(){
     fTrackPtBinBorders[iTrackPt] = fCard->GetLowBinBorderTrackPt(iTrackPt);
   }
   fLastLoadedTrackPtBin = fnTrackPtBins-1;
+  
+  // Track pT binning in track pair histograms
+  for(int iTrackPt = 0; iTrackPt <= fnTrackPairPtBins; iTrackPt++){
+    fTrackPairPtBinBorders[iTrackPt] = fCard->GetLowBinBorderTrackPairPt(iTrackPt);
+  }
+  fLastLoadedTrackPairPtBin = fnTrackPairPtBins-1;
   
   // Remove centrality selection from pp data and local testing
   if(collisionSystem.Contains("pp") || collisionSystem.Contains("localTest")){
@@ -181,6 +193,8 @@ TrackPairEfficiencyHistogramManager::TrackPairEfficiencyHistogramManager(const T
   fLastLoadedCentralityBin(in.fLastLoadedCentralityBin),
   fFirstLoadedTrackPtBin(in.fFirstLoadedTrackPtBin),
   fLastLoadedTrackPtBin(in.fLastLoadedTrackPtBin),
+  fFirstLoadedTrackPairPtBin(0),
+  fLastLoadedTrackPairPtBin(1),
   fhVertexZ(in.fhVertexZ),
   fhVertexZWeighted(in.fhVertexZWeighted),
   fhEvents(in.fhEvents),
@@ -209,6 +223,8 @@ TrackPairEfficiencyHistogramManager::TrackPairEfficiencyHistogramManager(const T
   for(int iTrackPt = 0; iTrackPt < kMaxTrackPtBins + 1; iTrackPt++){
     fTrackPtBinIndices[iTrackPt] = in.fTrackPtBinIndices[iTrackPt];
     fTrackPtBinBorders[iTrackPt] = in.fTrackPtBinBorders[iTrackPt];
+    fTrackPairPtBinIndices[iTrackPt] = in.fTrackPairPtBinIndices[iTrackPt];
+    fTrackPairPtBinBorders[iTrackPt] = in.fTrackPairPtBinBorders[iTrackPt];
   }
   
   // Centrality loop
@@ -316,13 +332,14 @@ void TrackPairEfficiencyHistogramManager::LoadJetHistograms(){
   
   int nAxes = 2;           // Number of constraining axes for this iteration
   
+  // Find the histogram array from which the projections are made
+  THnSparseD *histogramArray = (THnSparseD*) fInputFile->Get(fJetHistogramName);
   
   for(int iCentrality = fFirstLoadedCentralityBin; iCentrality <= fLastLoadedCentralityBin; iCentrality++){
     
     // Select the bin indices
     lowerCentralityBin = fCentralityBinIndices[iCentrality];
     higherCentralityBin = fCentralityBinIndices[iCentrality+1]+duplicateRemoverCentrality;
-    
     
     axisIndices[0] = 3; lowLimits[0] = lowerCentralityBin; highLimits[0] = higherCentralityBin;  // Centrality
     
@@ -332,13 +349,13 @@ void TrackPairEfficiencyHistogramManager::LoadJetHistograms(){
       axisIndices[1] = 4; lowLimits[1] = iDataLevel+1; highLimits[1] = iDataLevel+1;
       
       // Always load jet pT histograms
-      fhJetPt[iCentrality][iDataLevel] = FindHistogram(fInputFile,fJetHistogramName,0,nAxes,axisIndices,lowLimits,highLimits);
+      fhJetPt[iCentrality][iDataLevel] = FindHistogram(histogramArray,0,nAxes,axisIndices,lowLimits,highLimits);
       
       if(!fLoadJets) continue;  // Only load the remaining jet histograms if selected
       
-      fhJetPhi[iCentrality][iDataLevel] = FindHistogram(fInputFile,fJetHistogramName,1,nAxes,axisIndices,lowLimits,highLimits);
-      fhJetEta[iCentrality][iDataLevel] = FindHistogram(fInputFile,fJetHistogramName,2,nAxes,axisIndices,lowLimits,highLimits);
-      if(fLoad2DHistograms) fhJetEtaPhi[iCentrality][iDataLevel] = FindHistogram2D(fInputFile,fJetHistogramName,1,2,nAxes,axisIndices,lowLimits,highLimits);
+      fhJetPhi[iCentrality][iDataLevel] = FindHistogram(histogramArray,1,nAxes,axisIndices,lowLimits,highLimits);
+      fhJetEta[iCentrality][iDataLevel] = FindHistogram(histogramArray,2,nAxes,axisIndices,lowLimits,highLimits);
+      if(fLoad2DHistograms) fhJetEtaPhi[iCentrality][iDataLevel] = FindHistogram2D(histogramArray,1,2,nAxes,axisIndices,lowLimits,highLimits);
       
     } // Data level loop
     
@@ -378,7 +395,15 @@ void TrackPairEfficiencyHistogramManager::LoadTrackHistograms(){
   for(int iTrackType = 0; iTrackType < knTrackCategories; iTrackType++){
     if(!fLoadTracks[iTrackType]) continue;  // Only load the selected track types
     
+    // Find the histogram array from which the projections are made
+    THnSparseD *histogramArray = (THnSparseD*) fInputFile->Get(fTrackHistogramNames[iTrackType]);
+    
     for(int iCentrality = fFirstLoadedCentralityBin; iCentrality <= fLastLoadedCentralityBin; iCentrality++){
+      
+      // Reset the ranges for all the axes in the histogram array
+      for(int iAxis = 0; iAxis < histogramArray->GetNdimensions(); iAxis++){
+        histogramArray->GetAxis(iAxis)->SetRange(0,0);
+      }
       
       // Select the bin indices
       lowerCentralityBin = fCentralityBinIndices[iCentrality];
@@ -387,10 +412,10 @@ void TrackPairEfficiencyHistogramManager::LoadTrackHistograms(){
       // Setup axes with restrictions, (3 = centrality)
       axisIndices[0] = 3; lowLimits[0] = lowerCentralityBin; highLimits[0] = higherCentralityBin;
       
-      fhTrackPt[iTrackType][iCentrality] = FindHistogram(fInputFile,fTrackHistogramNames[iTrackType],0,1,axisIndices,lowLimits,highLimits);
-      fhTrackPhi[iTrackType][iCentrality][fnTrackPtBins] = FindHistogram(fInputFile,fTrackHistogramNames[iTrackType],1,1,axisIndices,lowLimits,highLimits);
-      fhTrackEta[iTrackType][iCentrality][fnTrackPtBins] = FindHistogram(fInputFile,fTrackHistogramNames[iTrackType],2,1,axisIndices,lowLimits,highLimits);
-      if(fLoad2DHistograms) fhTrackEtaPhi[iTrackType][iCentrality][fnTrackPtBins] = FindHistogram2D(fInputFile,fTrackHistogramNames[iTrackType],1,2,1,axisIndices,lowLimits,highLimits);
+      fhTrackPt[iTrackType][iCentrality] = FindHistogram(histogramArray,0,1,axisIndices,lowLimits,highLimits);
+      fhTrackPhi[iTrackType][iCentrality][fnTrackPtBins] = FindHistogram(histogramArray,1,1,axisIndices,lowLimits,highLimits);
+      fhTrackEta[iTrackType][iCentrality][fnTrackPtBins] = FindHistogram(histogramArray,2,1,axisIndices,lowLimits,highLimits);
+      if(fLoad2DHistograms) fhTrackEtaPhi[iTrackType][iCentrality][fnTrackPtBins] = FindHistogram2D(histogramArray,1,2,1,axisIndices,lowLimits,highLimits);
       
       for(int iTrackPt = fFirstLoadedTrackPtBin; iTrackPt <= fLastLoadedTrackPtBin; iTrackPt++){
         
@@ -402,9 +427,9 @@ void TrackPairEfficiencyHistogramManager::LoadTrackHistograms(){
         axisIndices[1] = 0; lowLimits[1] = lowerTrackPtBin; highLimits[1] = higherTrackPtBin;
         
         // Read the angle histograms in track pT bins
-        fhTrackPhi[iTrackType][iCentrality][iTrackPt] = FindHistogram(fInputFile,fTrackHistogramNames[iTrackType],1,2,axisIndices,lowLimits,highLimits);
-        fhTrackEta[iTrackType][iCentrality][iTrackPt] = FindHistogram(fInputFile,fTrackHistogramNames[iTrackType],2,2,axisIndices,lowLimits,highLimits);
-        if(fLoad2DHistograms) fhTrackEtaPhi[iTrackType][iCentrality][iTrackPt] = FindHistogram2D(fInputFile,fTrackHistogramNames[iTrackType],1,2,2,axisIndices,lowLimits,highLimits);
+        fhTrackPhi[iTrackType][iCentrality][iTrackPt] = FindHistogram(histogramArray,1,2,axisIndices,lowLimits,highLimits);
+        fhTrackEta[iTrackType][iCentrality][iTrackPt] = FindHistogram(histogramArray,2,2,axisIndices,lowLimits,highLimits);
+        if(fLoad2DHistograms) fhTrackEtaPhi[iTrackType][iCentrality][iTrackPt] = FindHistogram2D(histogramArray,1,2,2,axisIndices,lowLimits,highLimits);
         
       } // Track pT loop
     } // Centrality loop
@@ -448,6 +473,9 @@ void TrackPairEfficiencyHistogramManager::LoadTrackPairHistograms(){
   for(int iDataLevel = 0; iDataLevel < TrackPairEfficiencyHistograms::knDataLevels; iDataLevel++){
     if(!fLoadTrackPairs[iDataLevel]) continue;  // Only load the selected track pair types
     
+    // Find the histogram array from which the projections are made
+    THnSparseD *histogramArray = (THnSparseD*) fInputFile->Get(fTrackPairHistogramNames[iDataLevel]);
+    
     // Centrality loop
     for(int iCentrality = fFirstLoadedCentralityBin; iCentrality <= fLastLoadedCentralityBin; iCentrality++){
       
@@ -459,27 +487,27 @@ void TrackPairEfficiencyHistogramManager::LoadTrackPairHistograms(){
       axisIndices[0] = 5; lowLimits[0] = lowerCentralityBin; highLimits[0] = higherCentralityBin;
       
       // Trigger pT loop
-      for(int iTriggerPt = fFirstLoadedTrackPtBin; iTriggerPt <= fLastLoadedTrackPtBin; iTriggerPt++){
+      for(int iTriggerPt = fFirstLoadedTrackPairPtBin; iTriggerPt <= fLastLoadedTrackPairPtBin; iTriggerPt++){
         
         // Select the bin indices for track pT
-        lowerTriggerPtBin = fTrackPtBinIndices[iTriggerPt];
-        higherTriggerPtBin = fTrackPtBinIndices[iTriggerPt+1]+duplicateRemoverTrackPt;
+        lowerTriggerPtBin = fTrackPairPtBinIndices[iTriggerPt];
+        higherTriggerPtBin = fTrackPairPtBinIndices[iTriggerPt+1]+duplicateRemoverTrackPt;
         
         // Add restriction for trigger pT axis (1)
         axisIndices[1] = 1; lowLimits[1] = lowerTriggerPtBin; highLimits[1] = higherTriggerPtBin;
         
         // Associated pT loop
-        for(int iAssociatedPt = fFirstLoadedTrackPtBin; iAssociatedPt <= fLastLoadedTrackPtBin; iAssociatedPt++){
+        for(int iAssociatedPt = fFirstLoadedTrackPairPtBin; iAssociatedPt <= fLastLoadedTrackPairPtBin; iAssociatedPt++){
           
           // Select the bin indices for track pT
-          lowerAssociatedPtBin = fTrackPtBinIndices[iAssociatedPt];
-          higherAssociatedPtBin = fTrackPtBinIndices[iAssociatedPt+1]+duplicateRemoverTrackPt;
+          lowerAssociatedPtBin = fTrackPairPtBinIndices[iAssociatedPt];
+          higherAssociatedPtBin = fTrackPairPtBinIndices[iAssociatedPt+1]+duplicateRemoverTrackPt;
           
           // Add restriction for associated pT axis (2)
           axisIndices[2] = 2; lowLimits[1] = lowerAssociatedPtBin; highLimits[1] = higherAssociatedPtBin;
           
           // Read the deltaR distribution histograms
-          fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iDataLevel] = FindHistogram(fInputFile, fTrackPairHistogramNames[iDataLevel], 0, 3, axisIndices, lowLimits, highLimits);
+          fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iDataLevel] = FindHistogram(histogramArray, 0, 3, axisIndices, lowLimits, highLimits);
           
         } // Associated pT loop
       } // Trigger pT loop
@@ -487,6 +515,40 @@ void TrackPairEfficiencyHistogramManager::LoadTrackPairHistograms(){
   } // Data level loop
 }
 
+/*
+ * Extract a 2D histogram from a given centrality bin from THnSparseD
+ *
+ *  Arguments:
+ *   THnSparseD *histogramArray = Inputfile containing the THnSparse to be read
+ *   int xAxis = Index for the axis in THnSparse that is projected to x-axis for TH2D
+ *   int yAxis = Index for the axis in THnSparse that is projected to y-axis for TH2D
+ *   int nAxes = Number of axes that are restained for the projection
+ *   int *axisNumber = Indices for the axes in THnSparse that are used as a restriction for the projection
+ *   int *lowBinIndex = Indices of the lowest considered bins in the restriction axis
+ *   int *highBinIndex = Indices of the highest considered bins in the restriction axis
+ *   const bool normalizeToBinWidth = Flag for normalizing the projected histogram to the bin width
+ */
+TH2D* TrackPairEfficiencyHistogramManager::FindHistogram2D(THnSparseD *histogramArray, int xAxis, int yAxis, int nAxes, int *axisNumber, int *lowBinIndex, int *highBinIndex, const bool normalizeToBinWidth){
+  
+  // Apply the restrictions in the set of axes
+  for(int i = 0; i < nAxes; i++) histogramArray->GetAxis(axisNumber[i])->SetRange(lowBinIndex[i],highBinIndex[i]);
+  
+  // Create a unique name for eeach histogram that is read from the file
+  TString newName = histogramArray->GetName();
+  for(int iBinIndex = 0; iBinIndex < nAxes; iBinIndex++){
+    newName.Append(Form("_%d=%d-%d",axisNumber[iBinIndex],lowBinIndex[iBinIndex],highBinIndex[iBinIndex]));
+  }
+  
+  // Project out the histogram and give it the created unique name
+  TH2D *projectedHistogram = (TH2D*) histogramArray->Projection(yAxis,xAxis);
+  projectedHistogram->SetName(newName.Data());
+  
+  // Apply bin width normalization to the projected histogram
+  if(normalizeToBinWidth) projectedHistogram->Scale(1.0,"width");
+  
+  // Return the projected histogram
+  return projectedHistogram;
+}
 
 /*
  * Extract a 2D histogram from a given centrality bin from THnSparseD
@@ -556,6 +618,45 @@ TH2D* TrackPairEfficiencyHistogramManager::FindHistogram2D(TFile *inputFile, con
   int nAxes = 2;
   if(highBinIndex2 == 0 && lowBinIndex2 == 0) nAxes = 1;
   return FindHistogram2D(inputFile,name,xAxis,yAxis,nAxes,restrictionAxes,lowBinIndices,highBinIndices,normalizeToBinWidth);
+}
+
+/*
+ * Extract a histogram with given restrictions on other axes in THnSparse
+ *
+ *  Arguments:
+ *   THnSparseD *histogramArray = Histogram array from which the desired histograms are projected
+ *   int xAxis = Index for the axis in THnSparse that is projected to x-axis for TH1D
+ *   int nAxes = Number of axes that are restained for the projection
+ *   int *axisNumber = Indices for the axes in THnSparse that are used as a restriction for the projection
+ *   int *lowBinIndex = Indices of the lowest considered bins in the restriction axis
+ *   int *highBinIndex = Indices of the highest considered bins in the restriction axis
+ *   const bool normalizeToBinWidth = Flag for normalizing the projected histogram to the bin width
+ */
+TH1D* TrackPairEfficiencyHistogramManager::FindHistogram(THnSparseD *histogramArray, int xAxis, int nAxes, int *axisNumber, int *lowBinIndex, int *highBinIndex, const bool normalizeToBinWidth){
+  
+  // Apply the restrictions in the set of axes
+  for(int i = 0; i < nAxes; i++) histogramArray->GetAxis(axisNumber[i])->SetRange(lowBinIndex[i],highBinIndex[i]);
+  
+  // Create a unique name for each histogram that is read from the file
+  TString newName = histogramArray->GetName();
+  for(int iBinIndex = 0; iBinIndex < nAxes; iBinIndex++){
+    newName.Append(Form("_%d=%d-%d",axisNumber[iBinIndex],lowBinIndex[iBinIndex],highBinIndex[iBinIndex]));
+  }
+  
+  // Project out the histogram and give it the created unique name
+  TH1D *projectedHistogram = NULL;
+  
+  // Check that we are not trying to project a non-existing axis
+  if(xAxis < histogramArray->GetNdimensions()){
+    projectedHistogram = (TH1D*) histogramArray->Projection(xAxis);
+    projectedHistogram->SetName(newName.Data());
+  
+    // Apply bin width normalization to the projected histogram
+    if(normalizeToBinWidth) projectedHistogram->Scale(1.0,"width");
+  }
+  
+  // Return the projected histogram
+  return projectedHistogram;
 }
 
 /*
@@ -807,10 +908,10 @@ void TrackPairEfficiencyHistogramManager::WriteTrackPairHistograms(){
     for(int iCentrality = fFirstLoadedCentralityBin; iCentrality <= fLastLoadedCentralityBin; iCentrality++){
       
       // Trigger pT loop
-      for(int iTriggerPt = fFirstLoadedTrackPtBin; iTriggerPt <= fLastLoadedTrackPtBin; iTriggerPt++){
+      for(int iTriggerPt = fFirstLoadedTrackPairPtBin; iTriggerPt <= fLastLoadedTrackPairPtBin; iTriggerPt++){
         
         // Associated pT loop
-        for(int iAssociatedPt = fFirstLoadedTrackPtBin; iAssociatedPt <= fLastLoadedTrackPtBin; iAssociatedPt++){
+        for(int iAssociatedPt = fFirstLoadedTrackPairPtBin; iAssociatedPt <= fLastLoadedTrackPairPtBin; iAssociatedPt++){
           
           // DeltaR histogram without eta or phi selections
           histogramNamer = Form("%sDeltaR_C%dT%dA%d", fTrackPairHistogramNames[iDataLevel], iCentrality, iTriggerPt, iAssociatedPt);
@@ -920,8 +1021,8 @@ void TrackPairEfficiencyHistogramManager::LoadProcessedHistograms(){
   for(int iDataLevel = 0; iDataLevel < TrackPairEfficiencyHistograms::knDataLevels; iDataLevel++){
     if(!fLoadTrackPairs[iDataLevel]) continue;  // Only load the selected track pair types
     for(int iCentrality = fFirstLoadedCentralityBin; iCentrality <= fLastLoadedCentralityBin; iCentrality++){
-      for(int iTriggerPt = fFirstLoadedTrackPtBin; iTriggerPt <= fLastLoadedTrackPtBin; iTriggerPt++){
-        for(int iAssociatedPt = fFirstLoadedTrackPtBin; iAssociatedPt <= fLastLoadedTrackPtBin; iAssociatedPt++){
+      for(int iTriggerPt = fFirstLoadedTrackPairPtBin; iTriggerPt <= fLastLoadedTrackPairPtBin; iTriggerPt++){
+        for(int iAssociatedPt = fFirstLoadedTrackPairPtBin; iAssociatedPt <= fLastLoadedTrackPairPtBin; iAssociatedPt++){
           
           // Track phi in track pT bins
           histogramNamer = Form("%s/%sDeltaR_C%dT%dA%d", fTrackPairHistogramNames[iDataLevel], fTrackPairHistogramNames[iDataLevel], iCentrality, iTriggerPt, iAssociatedPt);
@@ -1029,6 +1130,20 @@ void TrackPairEfficiencyHistogramManager::SetTrackPtBins(const bool readBinsFrom
   
 }
 
+/*
+ * Set up track pT bin borders and indices according to provided bin borders for track pair histograms
+ *
+ *  const bool readBinsFromFile = True: Disregard given bins ans use the ones in fCard. False: Use given bins
+ *  const int nBins = Number of given track pT bins
+ *  const double *binBorders = New bin borders for track pT
+ *  const bool setIndices = Set the bin indices in THnSparse
+ */
+void TrackPairEfficiencyHistogramManager::SetTrackPairPtBins(const bool readBinsFromFile, const int nBins, const double *binBorders, const bool setIndices){
+  
+  SetGenericBins(readBinsFromFile, "trackPairs", 1, fnTrackPairPtBins, fTrackPairPtBinBorders, fTrackPairPtBinIndices, nBins, binBorders, "track pT", kMaxTrackPtBins, setIndices);
+  
+}
+
 // Setter for loading event information
 void TrackPairEfficiencyHistogramManager::SetLoadEventInformation(const bool loadOrNot){
   fLoadEventInformation = loadOrNot;
@@ -1100,6 +1215,15 @@ void TrackPairEfficiencyHistogramManager::SetTrackPtBinRange(const int first, co
   BinSanityCheck(fnTrackPtBins,fFirstLoadedTrackPtBin,fLastLoadedTrackPtBin);
 }
 
+// Setter for loaded track pT bins
+void TrackPairEfficiencyHistogramManager::SetTrackPairPtBinRange(const int first, const int last){
+  fFirstLoadedTrackPairPtBin = first;
+  fLastLoadedTrackPairPtBin = last;
+  
+  // Sanity check for track pT bins
+  BinSanityCheck(fnTrackPairPtBins,fFirstLoadedTrackPairPtBin,fLastLoadedTrackPairPtBin);
+}
+
 // Sanity check for set bins
 void TrackPairEfficiencyHistogramManager::BinSanityCheck(const int nBins, int& first, int& last){
   if(first < 0) first = 0;
@@ -1122,6 +1246,11 @@ int TrackPairEfficiencyHistogramManager::GetNCentralityBins() const{
 // Getter for the number of track pT bins
 int TrackPairEfficiencyHistogramManager::GetNTrackPtBins() const{
   return fnTrackPtBins;
+}
+
+// Getter for the number of track pT bins in track pair histograms
+int TrackPairEfficiencyHistogramManager::GetNTrackPairPtBins() const{
+  return fnTrackPairPtBins;
 }
 
 // Getter for the jet histogram name
@@ -1148,6 +1277,12 @@ double TrackPairEfficiencyHistogramManager::GetCentralityBinBorder(const int iCe
 double TrackPairEfficiencyHistogramManager::GetTrackPtBinBorder(const int iTrackPt) const{
   return fTrackPtBinBorders[iTrackPt];
 }
+
+// Getter for i:th track pT bin border in track pair histograms
+double TrackPairEfficiencyHistogramManager::GetTrackPairPtBinBorder(const int iTrackPt) const{
+  return fTrackPairPtBinBorders[iTrackPt];
+}
+
 
 // Getters for event information histograms
 

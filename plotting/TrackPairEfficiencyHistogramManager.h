@@ -59,6 +59,7 @@ public:
   // Setters for binning information
   void SetCentralityBins(const bool readBinsFromFile, const int nBins, const double *binBorders, bool setIndices = true); // Set up centrality bin indices according to provided bin borders
   void SetTrackPtBins(const bool readBinsFromFile, const int nBins, const double *binBorders, bool setIndices = true);    // Set up track pT bin indices according to provided bin borders
+  void SetTrackPairPtBins(const bool readBinsFromFile, const int nBins, const double *binBorders, bool setIndices = true);    // Set up track pT bin indices for track pair histograms according to provided bin borders
   
   // Setters for event information and dijets
   void SetLoadEventInformation(const bool loadOrNot); // Setter for loading event information
@@ -81,14 +82,17 @@ public:
   void SetLoad2DHistograms(const bool loadOrNot);           // Setter for loading two-dimensional histograms
   
   // Setters for ranges for different bins
-  void SetCentralityBinRange(const int first, const int last); // Setter for centrality bin range
-  void SetTrackPtBinRange(const int first, const int last);    // Setter for track pT bin range
+  void SetCentralityBinRange(const int first, const int last);  // Setter for centrality bin range
+  void SetTrackPtBinRange(const int first, const int last);     // Setter for track pT bin range
+  void SetTrackPairPtBinRange(const int first, const int last); // Setter for track pT bin range for track pair histograms
   
   // Getters for number of bins in histograms
   int GetNCentralityBins() const;  // Getter for the number of centrality bins
   int GetNTrackPtBins() const;     // Getter for the number of track pT bins
+  int GetNTrackPairPtBins() const; // Getter for the number of track pT bins in track pair histograms
   double GetCentralityBinBorder(const int iCentrality) const;  // Getter for i:th centrality bin border
   double GetTrackPtBinBorder(const int iTrackPt) const;        // Getter for i:th track pT bin border
+  double GetTrackPairPtBinBorder(const int iTrackPt) const;    // Getter for i:th track pT bin border in track pair histograms
   
   // Getters for histogram and axis naming
   const char* GetJetHistogramName() const; // Getter for the jet histogram name
@@ -156,6 +160,8 @@ private:
   int fLastLoadedCentralityBin;   // Last centrality bin that is loaded
   int fFirstLoadedTrackPtBin;     // First track pT bin that is loaded
   int fLastLoadedTrackPtBin;      // Last track pT bin that is loaded
+  int fFirstLoadedTrackPairPtBin; // First track pair pT bin that is loaded
+  int fLastLoadedTrackPairPtBin;  // Last track pair pT bin that is loaded
   
   // =============================================
   // ============ Binning information ============
@@ -164,8 +170,11 @@ private:
   double fCentralityBinBorders[kMaxCentralityBins+1]; // Centrality bin borders, from which bin indices are obtained
   int fTrackPtBinIndices[kMaxTrackPtBins+1];          // Indices for track pT bins in track eta and phi histograms
   double fTrackPtBinBorders[kMaxTrackPtBins+1];       // Track pT bin borders, from which bin indices are obtained
+  int fTrackPairPtBinIndices[kMaxTrackPtBins+1];      // Indices for track pT bins in track pair histograms
+  double fTrackPairPtBinBorders[kMaxTrackPtBins+1];   // Track pT bin borders in track pair histograms, from which bin indices are obtained
   int fnCentralityBins;                               // Number of centrality bins in the JCard of the data file
   int fnTrackPtBins;                                  // Number of track pT bins in the JCard of the data file
+  int fnTrackPairPtBins;                              // Number of track pT bins in track pair histograms in the JCard of the data file
   
   // =============================================
   // ===== Histograms for the dijet analysis =====
@@ -195,7 +204,7 @@ private:
   TH2D *fhTrackEtaPhi[knTrackCategories][kMaxCentralityBins][kMaxTrackPtBins+1]; // 2D eta-phi histograms for tracks
   
   // Histograms for track pairs
-  TH1D *fhTrackPairDeltaR[kMaxCentralityBins][kMaxTrackPtBins][kMaxTrackPtBins][TrackPairEfficiencyHistograms::knDataLevels];
+  TH1D *fhTrackPairDeltaR[kMaxCentralityBins][kMaxTrackPtBins+1][kMaxTrackPtBins+1][TrackPairEfficiencyHistograms::knDataLevels];
   
   // Private methods
   void InitializeFromCard(); // Initialize several member variables from TrackPairEfficiencyCard
@@ -205,10 +214,12 @@ private:
   void SetBinBordersAndIndices(const char* histogramName, const int nBins, double *copyBinBorders, int *binIndices, const double *binBorders, const int iAxis, const bool setIndices); // Read the bin indices for given bin borders
   
   // Finders for histograms with different amount of restrictions
+  TH2D* FindHistogram2D(THnSparseD *histogramArray, int xAxis, int yAxis, int nAxes, int *axisNumber, int *lowBinIndex, int *highBinIndex, const bool normalizeToBinWidth = true); // Extract a 2D histogram using given axis restrictions from THnSparseD
   TH2D* FindHistogram2D(TFile *inputFile, const char *name, int xAxis, int yAxis, int nAxes, int *axisNumber, int *lowBinIndex, int *highBinIndex, const bool normalizeToBinWidth = true); // Extract a 2D histogram using given axis restrictions from THnSparseD
   TH2D* FindHistogram2D(TFile *inputFile, const char *name, int xAxis, int yAxis, int restrictionAxis, int lowBinIndex, int highBinIndex, int restrictionAxis2 = 0, int lowBinIndex2 = 0, int highBinIndex2 = 0, const bool normalizeToBinWidth = true); // Extract a 2D histogram using given axis restrictions from THnSparseD
   TH1D* FindHistogram(TFile *inputFile, const char *name, int xAxis, int nAxes, int *axisNumber, int *lowBinIndex, int *highBinIndex, const bool normalizeToBinWidth = true); // Extract a histogram using given axis restrictions from THnSparseD
   TH1D* FindHistogram(TFile *inputFile, const char *name, int xAxis, int restrictionAxis, int lowBinIndex, int highBinIndex, int restrictionAxis2 = 0, int lowBinIndex2 = 0, int highBinIndex2 = 0, const bool normalizeToBinWidth = true); // Extract a histogram using given axis restrictions from THnSparseD
+  TH1D* FindHistogram(THnSparseD *histogramArray, int xAxis, int nAxes, int *axisNumber, int *lowBinIndex, int *highBinIndex, const bool normalizeToBinWidth = true);
   
   // Loaders for different groups of histograms
   void LoadJetHistograms();       // Loader for jet histograms

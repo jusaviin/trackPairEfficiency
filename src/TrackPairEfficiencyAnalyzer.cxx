@@ -1,4 +1,4 @@
-// Class for the main analysis algorithms for the energy-energy correlator analysis
+// Class for the main analysis algorithms for the track pair efficiency analysis
 
 // Root includes
 #include <TFile.h>
@@ -563,7 +563,7 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
       
       
       //***********************************************************************
-      //    Loop over all jets and fill histograms for different triggers
+      //        Loop over all jets and fill inclusive jet histograms
       //***********************************************************************
       
       // Jet loop
@@ -908,7 +908,7 @@ Bool_t TrackPairEfficiencyAnalyzer::PassSubeventCut(const Int_t subeventIndex) c
 }
 
 /*
- * Getter for trigger histograms
+ * Getter for track pair efficiency histograms
  */
 TrackPairEfficiencyHistograms* TrackPairEfficiencyAnalyzer::GetHistograms() const{
   return fHistograms;

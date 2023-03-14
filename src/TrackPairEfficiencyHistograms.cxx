@@ -1,4 +1,4 @@
-// Histograms needed in the trigger analysis
+// Histograms needed in the track pair efficiency analysis
 
 // C++ includes
 #include <assert.h>
@@ -197,10 +197,10 @@ void TrackPairEfficiencyHistograms::CreateHistograms(){
   }
   
   // Wide track pT bins for the track pair histograms
-  const Int_t nWideTrackPtBins = fCard->GetNBin("TrackPtBinEdges");
+  const Int_t nWideTrackPtBins = fCard->GetNBin("TrackPairPtBinEdges");
   Double_t wideTrackPtBins[nWideTrackPtBins+1];
   for(Int_t iTrackPt = 0; iTrackPt < nWideTrackPtBins+1; iTrackPt++){
-    wideTrackPtBins[iTrackPt] = fCard->Get("TrackPtBinEdges",iTrackPt);
+    wideTrackPtBins[iTrackPt] = fCard->Get("TrackPairPtBinEdges",iTrackPt);
   }
   const Double_t minWideTrackPt = wideTrackPtBins[0];
   const Double_t maxWideTrackPt = wideTrackPtBins[nWideTrackPtBins];
@@ -369,6 +369,10 @@ void TrackPairEfficiencyHistograms::CreateHistograms(){
   fhTrackPairs = new THnSparseF("trackPairs","trackPairs",nAxesTrackPair,nBinsTrackPair,lowBinBorderTrackPair,highBinBorderTrackPair); fhTrackPairs->Sumw2();
   fhGenParticlePairs = new THnSparseF("genParticlePairs","genParticlePairs",nAxesTrackPair,nBinsTrackPair,lowBinBorderTrackPair,highBinBorderTrackPair); fhGenParticlePairs->Sumw2();
 
+  // Set custom deltaR bins for histograms
+  fhTrackPairs->SetBinEdges(0,deltaRBinsEEC);
+  fhGenParticlePairs->SetBinEdges(0,deltaRBinsEEC);
+  
   // Set custom track pT bins for histograms
   fhTrackPairs->SetBinEdges(1,wideTrackPtBins);
   fhGenParticlePairs->SetBinEdges(1,wideTrackPtBins);
