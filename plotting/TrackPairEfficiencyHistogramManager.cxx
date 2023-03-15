@@ -1026,7 +1026,7 @@ void TrackPairEfficiencyHistogramManager::LoadProcessedHistograms(){
           
           // Track phi in track pT bins
           histogramNamer = Form("%s/%sDeltaR_C%dT%dA%d", fTrackPairHistogramNames[iDataLevel], fTrackPairHistogramNames[iDataLevel], iCentrality, iTriggerPt, iAssociatedPt);
-          fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iDataLevel]->Write(histogramNamer.Data(), TObject::kOverwrite);
+          fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iDataLevel] = (TH1D*) fInputFile->Get(histogramNamer.Data());
           
         } // Associated pT loop
       } // Trigger pT loop
