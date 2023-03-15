@@ -497,7 +497,7 @@ void TrackPairEfficiencyHistogramManager::LoadTrackPairHistograms(){
         axisIndices[1] = 1; lowLimits[1] = lowerTriggerPtBin; highLimits[1] = higherTriggerPtBin;
         
         // Associated pT loop
-        for(int iAssociatedPt = fFirstLoadedTrackPairPtBin; iAssociatedPt <= fLastLoadedTrackPairPtBin; iAssociatedPt++){
+        for(int iAssociatedPt = fFirstLoadedTrackPairPtBin; iAssociatedPt <= iTriggerPt; iAssociatedPt++){
           
           // Select the bin indices for track pT
           lowerAssociatedPtBin = fTrackPairPtBinIndices[iAssociatedPt];
@@ -911,7 +911,7 @@ void TrackPairEfficiencyHistogramManager::WriteTrackPairHistograms(){
       for(int iTriggerPt = fFirstLoadedTrackPairPtBin; iTriggerPt <= fLastLoadedTrackPairPtBin; iTriggerPt++){
         
         // Associated pT loop
-        for(int iAssociatedPt = fFirstLoadedTrackPairPtBin; iAssociatedPt <= fLastLoadedTrackPairPtBin; iAssociatedPt++){
+        for(int iAssociatedPt = fFirstLoadedTrackPairPtBin; iAssociatedPt <= iTriggerPt; iAssociatedPt++){
           
           // DeltaR histogram without eta or phi selections
           histogramNamer = Form("%sDeltaR_C%dT%dA%d", fTrackPairHistogramNames[iDataLevel], iCentrality, iTriggerPt, iAssociatedPt);
@@ -1022,7 +1022,7 @@ void TrackPairEfficiencyHistogramManager::LoadProcessedHistograms(){
     if(!fLoadTrackPairs[iDataLevel]) continue;  // Only load the selected track pair types
     for(int iCentrality = fFirstLoadedCentralityBin; iCentrality <= fLastLoadedCentralityBin; iCentrality++){
       for(int iTriggerPt = fFirstLoadedTrackPairPtBin; iTriggerPt <= fLastLoadedTrackPairPtBin; iTriggerPt++){
-        for(int iAssociatedPt = fFirstLoadedTrackPairPtBin; iAssociatedPt <= fLastLoadedTrackPairPtBin; iAssociatedPt++){
+        for(int iAssociatedPt = fFirstLoadedTrackPairPtBin; iAssociatedPt <= iTriggerPt; iAssociatedPt++){
           
           // Track phi in track pT bins
           histogramNamer = Form("%s/%sDeltaR_C%dT%dA%d", fTrackPairHistogramNames[iDataLevel], fTrackPairHistogramNames[iDataLevel], iCentrality, iTriggerPt, iAssociatedPt);

@@ -75,7 +75,7 @@ void trackPairEfficiencyPlotter(){
   // Read the histograms from the file
   for(int iCentrality = firstDrawCentralityBin; iCentrality <= lastDrawnCentralityBin; iCentrality++){
     for(int iTriggerPt = firstDrawnTriggerPtBin; iTriggerPt <= lastDrawnTriggerPtBin; iTriggerPt++){
-      for(int iAssociatedPt = firstDrawnAssociatedPtBin; iAssociatedPt <= lastDrawnAssociatedPtBin; iAssociatedPt++){
+      for(int iAssociatedPt = firstDrawnAssociatedPtBin; iAssociatedPt <= iTriggerPt; iAssociatedPt++){
         for(int iDataLevel = 0; iDataLevel < TrackPairEfficiencyHistograms::knDataLevels; iDataLevel++){
           hTrackDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iDataLevel] = histograms->GetHistogramTrackPairDeltaR(iCentrality, iTriggerPt, iAssociatedPt, iDataLevel);
         } // Data level loop
@@ -86,7 +86,7 @@ void trackPairEfficiencyPlotter(){
   // Calculate the generator level to reconstructed ratio to determine track pair efficiency
   for(int iCentrality = firstDrawCentralityBin; iCentrality <= lastDrawnCentralityBin; iCentrality++){
     for(int iTriggerPt = firstDrawnTriggerPtBin; iTriggerPt <= lastDrawnTriggerPtBin; iTriggerPt++){
-      for(int iAssociatedPt = firstDrawnAssociatedPtBin; iAssociatedPt <= lastDrawnAssociatedPtBin; iAssociatedPt++){
+      for(int iAssociatedPt = firstDrawnAssociatedPtBin; iAssociatedPt <= iTriggerPt; iAssociatedPt++){
         hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt] = (TH1D*) hTrackDeltaR[iCentrality][iTriggerPt][iAssociatedPt][TrackPairEfficiencyHistograms::kReconstructed]->Clone(Form("ratio%d%d%d", iCentrality, iTriggerPt, iAssociatedPt));
         hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt]->Divide(hTrackDeltaR[iCentrality][iTriggerPt][iAssociatedPt][TrackPairEfficiencyHistograms::kGeneratorLevel]);
       } // Associated pT loo
