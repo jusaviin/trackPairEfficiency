@@ -10,6 +10,7 @@
 #include <tuple>      // For returning several arguments in a transparent manner
 #include <fstream>
 #include <string>
+#include <tuple>
 
 // Root includes
 #include <TString.h>
@@ -29,6 +30,7 @@ class TrackPairEfficiencyAnalyzer{
 private:
   
   enum enumSubeventCuts{kSubeventZero,kSubeventNonZero,kSubeventAny,knSubeventCuts}; // Cuts for subevent index
+  enum enumTupleDecoder{kTrackPt, kTrackEta, kTrackPhi, kTrackEfficiency}; // Components of the n-tuple in track vector
   
 public:
   

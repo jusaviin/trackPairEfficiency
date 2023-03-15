@@ -311,18 +311,19 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
   Double_t ptHat = 0;               // pT hat for MC events
   
   // Variables for tracks
-  Double_t fillerTrack[4];                   // Track histogram filler
-  Double_t fillerTrackPair[6];               // Track pair histogram filler
-  Int_t nTracks;                             // Number of tracks in an event
-  Double_t averagePairEta = 0;               // Average eta of the track pair
-  Double_t averagePairPhi = 0;               // Average phi of the track pair
-  Double_t pairDeltaR = 0;                   // DeltaR between the two tracks in a pair
+  Double_t fillerTrack[4];          // Track histogram filler
+  Double_t fillerTrackPair[6];      // Track pair histogram filler
+  Int_t nTracks;                    // Number of tracks in an event
+  Double_t trackPt;                 // Track pT
+  Double_t trackEta;                // Track eta
+  Double_t trackPhi;                // Track phi
+  Double_t trackEfficiency;         // Track efficiency
+  Double_t averagePairEta = 0;      // Average eta of the track pair
+  Double_t averagePairPhi = 0;      // Average phi of the track pair
+  Double_t pairDeltaR = 0;          // DeltaR between the two tracks in a pair
   
-  // Vectors in attempt to make the track pairings faster
-  vector<double> selectedTrackPt;         // Track pT for the tracks passing the tracking cuts
-  vector<double> selectedTrackEta;        // Track eta for the tracks passing the tracking cuts
-  vector<double> selectedTrackPhi;        // Track phi for the tracks passing the tracking cuts
-  vector<double> selectedTrackEfficiency; // Track efficiency for the tracks passing the tracking cuts
+  // Vectors of tuples to make the track pairing faster
+  vector<std::tuple<double,double,double,double>> selectedTrackInformation;  // Track pT, eta, phi and efficiency for tracks passing the cuts
   
   // Variables for jets
   Int_t nJets = 0;                  // Number of jets in an event
@@ -450,11 +451,8 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
       //             Collect basic track distribution hisotgrams
       //***********************************************************************
       
-      // Clear the track vectors
-      selectedTrackPt.clear();
-      selectedTrackEta.clear();
-      selectedTrackPhi.clear();
-      selectedTrackEfficiency.clear();
+      // Clear the track information vector
+      selectedTrackInformation.clear();
       
       // Loop over all track in the event
       nTracks = fEventReader->GetNTracks();
@@ -463,43 +461,47 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
         // Check that all the track cuts are passed
         if(!PassTrackCuts(fEventReader,iTrack,fHistograms->fhTrackCuts,false)) continue;
         
-        // Get the track information and add it to vectors
-        selectedTrackPt.push_back(fEventReader->GetTrackPt(iTrack));
-        selectedTrackEta.push_back(fEventReader->GetTrackEta(iTrack));
-        selectedTrackPhi.push_back(fEventReader->GetTrackPhi(iTrack));
-        selectedTrackEfficiency.push_back(GetTrackEfficiencyCorrection(iTrack));
+        // Get the track information and add it to vector
+        trackPt = fEventReader->GetTrackPt(iTrack);
+        trackEta = fEventReader->GetTrackEta(iTrack);
+        trackPhi = fEventReader->GetTrackPhi(iTrack);
+        trackEfficiency = GetTrackEfficiencyCorrection(iTrack);
+        selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, trackEfficiency));
         
         // Fill track histograms
-        fillerTrack[0] = selectedTrackPt.back();      // Axis 0: Track pT
-        fillerTrack[1] = selectedTrackPhi.back();     // Axis 1: Track phi
-        fillerTrack[2] = selectedTrackEta.back();     // Axis 2: Track eta
-        fillerTrack[3] = centrality;                  // Axis 3: Centrality
-        fHistograms->fhTrack->Fill(fillerTrack,selectedTrackEfficiency.back()*fTotalEventWeight);  // Fill the track histogram
+        fillerTrack[0] = trackPt;      // Axis 0: Track pT
+        fillerTrack[1] = trackPhi;     // Axis 1: Track phi
+        fillerTrack[2] = trackEta;     // Axis 2: Track eta
+        fillerTrack[3] = centrality;   // Axis 3: Centrality
+        fHistograms->fhTrack->Fill(fillerTrack,trackEfficiency*fTotalEventWeight);  // Fill the track histogram
         fHistograms->fhTrackUncorrected->Fill(fillerTrack,fTotalEventWeight);                      // Fill the uncorrected track histogram
         
       } // Track loop
       
+      // Sort the vector such that the larger track pT will always be assigned to the first slot
+      std::sort(selectedTrackInformation.begin(), selectedTrackInformation.end(), std::greater<std::tuple<double,double,double,double>>());
+      
       // Once we have looped over all the tracks, only loop over tracks that pass the cuts to construct all possible track pairings
-      for(Int_t iTrack = 0; iTrack < selectedTrackPt.size(); iTrack++){
-        for(Int_t jTrack = iTrack+1; jTrack < selectedTrackPt.size(); jTrack++){
+      for(Int_t iTrack = 0; iTrack < selectedTrackInformation.size(); iTrack++){
+        for(Int_t jTrack = iTrack+1; jTrack < selectedTrackInformation.size(); jTrack++){
           
           // Calculate the distance of the two tracks from each other
-          pairDeltaR = GetDeltaR(selectedTrackEta.at(iTrack), selectedTrackPhi.at(iTrack), selectedTrackEta.at(jTrack), selectedTrackPhi.at(jTrack));
+          pairDeltaR = GetDeltaR(std::get<kTrackEta>(selectedTrackInformation.at(iTrack)), std::get<kTrackPhi>(selectedTrackInformation.at(iTrack)), std::get<kTrackEta>(selectedTrackInformation.at(jTrack)), std::get<kTrackPhi>(selectedTrackInformation.at(jTrack)));
           
           // Fill the track pair histograms for tracks relatively close to each other
           if(pairDeltaR < 0.8){
             
             // Calculate the average pair eta and phi positions
-            averagePairEta = (selectedTrackEta.at(iTrack)+selectedTrackEta.at(jTrack))/2.0;
-            averagePairPhi = (selectedTrackPhi.at(iTrack)+selectedTrackPhi.at(jTrack))/2.0;
+            averagePairEta = (std::get<kTrackEta>(selectedTrackInformation.at(iTrack))+std::get<kTrackEta>(selectedTrackInformation.at(jTrack)))/2.0;
+            averagePairPhi = (std::get<kTrackPhi>(selectedTrackInformation.at(iTrack))+std::get<kTrackPhi>(selectedTrackInformation.at(jTrack)))/2.0;
             
-            fillerTrackPair[0] = pairDeltaR;                   // Axis 0: DeltaR between the two tracks
-            fillerTrackPair[1] = selectedTrackPt.at(iTrack);   // Axis 1: First track pT
-            fillerTrackPair[2] = selectedTrackPt.at(jTrack);   // Axis 2: Second track pT
-            fillerTrackPair[3] = averagePairPhi;               // Axis 3: Average pair phi
-            fillerTrackPair[4] = averagePairEta;               // Axis 4: Average pair eta
-            fillerTrackPair[5] = centrality;                   // Axis 5: Centrality
-            fHistograms->fhTrackPairs->Fill(fillerTrackPair, selectedTrackEfficiency.at(iTrack) * selectedTrackEfficiency.at(jTrack) * fTotalEventWeight);  // Fill the track pair histogram
+            fillerTrackPair[0] = pairDeltaR;                                               // Axis 0: DeltaR between the two tracks
+            fillerTrackPair[1] = std::get<kTrackPt>(selectedTrackInformation.at(iTrack));  // Axis 1: Higher track pT
+            fillerTrackPair[2] = std::get<kTrackPt>(selectedTrackInformation.at(jTrack));  // Axis 2: Lower track pT
+            fillerTrackPair[3] = averagePairPhi;                                           // Axis 3: Average pair phi
+            fillerTrackPair[4] = averagePairEta;                                           // Axis 4: Average pair eta
+            fillerTrackPair[5] = centrality;                                               // Axis 5: Centrality
+            fHistograms->fhTrackPairs->Fill(fillerTrackPair, std::get<kTrackEfficiency>(selectedTrackInformation.at(iTrack)) * std::get<kTrackEfficiency>(selectedTrackInformation.at(jTrack)) * fTotalEventWeight);  // Fill the track pair histogram
           }
           
         } // Inner track loop
@@ -509,10 +511,7 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
       if(fDataType == ForestReader::kPpMC || fDataType == ForestReader::kPbPbMC){
        
         // Clear the track vectors
-        selectedTrackPt.clear();
-        selectedTrackEta.clear();
-        selectedTrackPhi.clear();
-        selectedTrackEfficiency.clear();
+        selectedTrackInformation.clear();
         
         nTracks = fEventReader->GetNGenParticles();
         for(Int_t iTrack = 0; iTrack < nTracks; iTrack++){
@@ -521,45 +520,49 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
           if(!PassGenParticleSelection(fEventReader,iTrack,fHistograms->fhGenParticleSelections,false)) continue;
           
           // Get the efficiency correction
-          selectedTrackPt.push_back(fEventReader->GetGenParticlePt(iTrack));
-          selectedTrackEta.push_back(fEventReader->GetGenParticleEta(iTrack));
-          selectedTrackPhi.push_back(fEventReader->GetGenParticlePhi(iTrack));
+          trackPt = fEventReader->GetGenParticlePt(iTrack);
+          trackEta = fEventReader->GetGenParticleEta(iTrack);
+          trackPhi = fEventReader->GetGenParticlePhi(iTrack);
+          selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, 1));
           
           // Fill track histograms
-          fillerTrack[0] = selectedTrackPt.back();      // Axis 0: Generator level particle pT
-          fillerTrack[1] = selectedTrackPhi.back();     // Axis 1: Generator level particle phi
-          fillerTrack[2] = selectedTrackEta.back();     // Axis 2: Generator level particle eta
-          fillerTrack[3] = centrality;                  // Axis 3: Centrality
+          fillerTrack[0] = trackPt;      // Axis 0: Generator level particle pT
+          fillerTrack[1] = trackPhi;     // Axis 1: Generator level particle phi
+          fillerTrack[2] = trackEta;     // Axis 2: Generator level particle eta
+          fillerTrack[3] = centrality;   // Axis 3: Centrality
           fHistograms->fhGenParticle->Fill(fillerTrack,fTotalEventWeight);  // Fill the generator level particle histogram
         }
         
+        // Sort the vector such that the larger track pT will always be assigned to the first slot
+        std::sort(selectedTrackInformation.begin(), selectedTrackInformation.end(), std::greater<std::tuple<double,double,double,double>>());
+        
         // Once we have looped over all the tracks, only loop over tracks that pass the cuts to construct all possible track pairings
-        for(Int_t iTrack = 0; iTrack < selectedTrackPt.size(); iTrack++){
-          for(Int_t jTrack = iTrack+1; jTrack < selectedTrackPt.size(); jTrack++){
+        for(Int_t iTrack = 0; iTrack < selectedTrackInformation.size(); iTrack++){
+          for(Int_t jTrack = iTrack+1; jTrack < selectedTrackInformation.size(); jTrack++){
 
             // Calculate the distance of the two tracks from each other
-            pairDeltaR = GetDeltaR(selectedTrackEta.at(iTrack), selectedTrackPhi.at(iTrack), selectedTrackEta.at(jTrack), selectedTrackPhi.at(jTrack));
+            pairDeltaR = GetDeltaR(std::get<kTrackEta>(selectedTrackInformation.at(iTrack)), std::get<kTrackPhi>(selectedTrackInformation.at(iTrack)), std::get<kTrackEta>(selectedTrackInformation.at(jTrack)), std::get<kTrackPhi>(selectedTrackInformation.at(jTrack)));
 
             // Fill the track pair histograms for tracks relatively close to each other
             if(pairDeltaR < 0.8){
 
               // Calculate the average pair eta and phi positions
-              averagePairEta = (selectedTrackEta.at(iTrack)+selectedTrackEta.at(jTrack))/2.0;
-              averagePairPhi = (selectedTrackPhi.at(iTrack)+selectedTrackPhi.at(jTrack))/2.0;
+              averagePairEta = (std::get<kTrackEta>(selectedTrackInformation.at(iTrack))+std::get<kTrackEta>(selectedTrackInformation.at(jTrack)))/2.0;
+              averagePairPhi = (std::get<kTrackPhi>(selectedTrackInformation.at(iTrack))+std::get<kTrackPhi>(selectedTrackInformation.at(jTrack)))/2.0;
 
-              fillerTrackPair[0] = pairDeltaR;                   // Axis 0: DeltaR between the two tracks
-              fillerTrackPair[1] = selectedTrackPt.at(iTrack);   // Axis 1: First track pT
-              fillerTrackPair[2] = selectedTrackPt.at(jTrack);   // Axis 2: Second track pT
-              fillerTrackPair[3] = averagePairPhi;               // Axis 3: Average pair phi
-              fillerTrackPair[4] = averagePairEta;               // Axis 4: Average pair eta
-              fillerTrackPair[5] = centrality;                   // Axis 5: Centrality
-              fHistograms->fhGenParticlePairs->Fill(fillerTrackPair,fTotalEventWeight);  // Fill the track pair histogram
+              fillerTrackPair[0] = pairDeltaR;                                               // Axis 0: DeltaR between the two tracks
+              fillerTrackPair[1] = std::get<kTrackPt>(selectedTrackInformation.at(iTrack));  // Axis 1: Higher particle pT
+              fillerTrackPair[2] = std::get<kTrackPt>(selectedTrackInformation.at(jTrack));  // Axis 2: Lower particle pT
+              fillerTrackPair[3] = averagePairPhi;                                           // Axis 3: Average pair phi
+              fillerTrackPair[4] = averagePairEta;                                           // Axis 4: Average pair eta
+              fillerTrackPair[5] = centrality;                                               // Axis 5: Centrality
+              fHistograms->fhGenParticlePairs->Fill(fillerTrackPair,fTotalEventWeight);      // Fill the track pair histogram
             }
 
           } // Inner track loop
         } // Outer track loop
         
-      }
+      } // If for Monte Carlo particles
       
       
       //***********************************************************************
