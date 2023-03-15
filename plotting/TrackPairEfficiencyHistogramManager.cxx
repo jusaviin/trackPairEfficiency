@@ -504,7 +504,7 @@ void TrackPairEfficiencyHistogramManager::LoadTrackPairHistograms(){
           higherAssociatedPtBin = fTrackPairPtBinIndices[iAssociatedPt+1]+duplicateRemoverTrackPt;
           
           // Add restriction for associated pT axis (2)
-          axisIndices[2] = 2; lowLimits[1] = lowerAssociatedPtBin; highLimits[1] = higherAssociatedPtBin;
+          axisIndices[2] = 2; lowLimits[2] = lowerAssociatedPtBin; highLimits[2] = higherAssociatedPtBin;
           
           // Read the deltaR distribution histograms
           fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iDataLevel] = FindHistogram(histogramArray, 0, 3, axisIndices, lowLimits, highLimits);
