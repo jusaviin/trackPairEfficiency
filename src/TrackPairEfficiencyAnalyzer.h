@@ -63,6 +63,7 @@ private:
   Double_t  GetTrackEfficiencyCorrection(const Float_t trackPt, const Float_t trackEta, const Int_t hiBin); // Get the track efficiency correction for given track and event information
   
   Double_t GetDeltaR(const Double_t eta1, const Double_t phi1, const Double_t eta2, const Double_t phi2) const; // Get deltaR between two objects
+  Double_t GetAveragePhi(const Double_t phi1, const Double_t phi2) const; // Get an average of two phi values
   
   // Private data members
   ForestReader *fEventReader;               // Reader for objects in the event
@@ -101,6 +102,8 @@ private:
   
   // Track selection cuts
   Double_t fTrackEtaCut;               // Eta cut around midrapidity
+  Double_t fTriggerEtaCut;             // Stricter eta cut for the trigger particle
+  Bool_t fCutBadPhiRegionTrigger;      // Do not let the trigger particle to be in the phi region with bad tracker performance
   Double_t fTrackMinPtCut;             // Minimum pT cut
   Double_t fTrackMaxPtCut;             // Maximum pT cut
   Double_t fMaxTrackPtRelativeError;   // Maximum relative error for pT

@@ -9,7 +9,7 @@
 void trackPairEfficiencyPlotter(){
   
   // File containing the track pair distributions used to determine the track pair efficiency
-  TString fileName = "veryCoolData_processed.root";
+  TString fileName = "data/trackPairEfficiency_wholeTracker_updatePt_first500_projected_2023-03-15.root";
   
   // Open the file and check that it exists
   TFile* inputFile = TFile::Open(fileName);
@@ -38,10 +38,10 @@ void trackPairEfficiencyPlotter(){
   const int lastDrawnCentralityBin = 0;
   
   const int firstDrawnTriggerPtBin = 0;
-  const int lastDrawnTriggerPtBin = 3;
+  const int lastDrawnTriggerPtBin = nTrackPtBins-1;
   
   const int firstDrawnAssociatedPtBin = 0;
-  const int lastDrawnAssociatedPtBin = 3;
+  const int lastDrawnAssociatedPtBin = nTrackPtBins-1;
   
   // Figure saving
   const bool saveFigures = false;  // Save figures

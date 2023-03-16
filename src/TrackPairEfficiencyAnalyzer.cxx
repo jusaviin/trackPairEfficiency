@@ -40,6 +40,8 @@ TrackPairEfficiencyAnalyzer::TrackPairEfficiencyAnalyzer() :
   fMinimumMaxTrackPtFraction(0),
   fMaximumMaxTrackPtFraction(0),
   fTrackEtaCut(0),
+  fTriggerEtaCut(0),
+  fCutBadPhiRegionTrigger(false),
   fTrackMinPtCut(0),
   fTrackMaxPtCut(0),
   fMaxTrackPtRelativeError(0),
@@ -157,6 +159,8 @@ TrackPairEfficiencyAnalyzer::TrackPairEfficiencyAnalyzer(const TrackPairEfficien
   fMinimumMaxTrackPtFraction(in.fMinimumMaxTrackPtFraction),
   fMaximumMaxTrackPtFraction(in.fMaximumMaxTrackPtFraction),
   fTrackEtaCut(in.fTrackEtaCut),
+  fTriggerEtaCut(in.fTriggerEtaCut),
+  fCutBadPhiRegionTrigger(in.fCutBadPhiRegionTrigger),
   fTrackMinPtCut(in.fTrackMinPtCut),
   fTrackMaxPtCut(in.fTrackMaxPtCut),
   fMaxTrackPtRelativeError(in.fMaxTrackPtRelativeError),
@@ -206,6 +210,8 @@ TrackPairEfficiencyAnalyzer& TrackPairEfficiencyAnalyzer::operator=(const TrackP
   fMinimumMaxTrackPtFraction = in.fMinimumMaxTrackPtFraction;
   fMaximumMaxTrackPtFraction = in.fMaximumMaxTrackPtFraction;
   fTrackEtaCut = in.fTrackEtaCut;
+  fTriggerEtaCut = in.fTriggerEtaCut;
+  fCutBadPhiRegionTrigger = in.fCutBadPhiRegionTrigger;
   fTrackMinPtCut = in.fTrackMinPtCut;
   fTrackMaxPtCut = in.fTrackMaxPtCut;
   fMaxTrackPtRelativeError = in.fMaxTrackPtRelativeError;
@@ -275,6 +281,8 @@ void TrackPairEfficiencyAnalyzer::ReadConfigurationFromCard(){
   //****************************************
   
   fTrackEtaCut = fCard->Get("TrackEtaCut");     // Eta cut around midrapidity
+  fTriggerEtaCut = fCard->Get("TriggerEtaCut"); // Stricter eta cut for the trigger particle
+  fCutBadPhiRegionTrigger = (fCard->Get("CutBadPhiTrigger") == 1);   // Do not let the trigger particle to be in the phi region with bad tracker performance
   fTrackMinPtCut = fCard->Get("MinTrackPtCut"); // Minimum track pT cut
   fTrackMaxPtCut = fCard->Get("MaxTrackPtCut"); // Maximum track pT cut
   fMaxTrackPtRelativeError = fCard->Get("MaxTrackPtRelativeError");   // Maximum relative error for pT
@@ -483,6 +491,11 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
       
       // Once we have looped over all the tracks, only loop over tracks that pass the cuts to construct all possible track pairings
       for(Int_t iTrack = 0; iTrack < selectedTrackInformation.size(); iTrack++){
+        
+        // Apply extra cuts for the trigger particle in the analysis
+        if(TMath::Abs(std::get<kTrackEta>(selectedTrackInformation.at(iTrack))) > fTriggerEtaCut) continue;  // Stricter eta cut for trigger particles
+        if(fCutBadPhiRegionTrigger && (std::get<kTrackPhi>(selectedTrackInformation.at(iTrack)) > -0.1 && std::get<kTrackPhi>(selectedTrackInformation.at(iTrack)) < 1.2)) continue; // Do not let the trigger particle to be in the phi region with bad tracker performance
+        
         for(Int_t jTrack = iTrack+1; jTrack < selectedTrackInformation.size(); jTrack++){
           
           // Calculate the distance of the two tracks from each other
@@ -493,7 +506,7 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
             
             // Calculate the average pair eta and phi positions
             averagePairEta = (std::get<kTrackEta>(selectedTrackInformation.at(iTrack))+std::get<kTrackEta>(selectedTrackInformation.at(jTrack)))/2.0;
-            averagePairPhi = (std::get<kTrackPhi>(selectedTrackInformation.at(iTrack))+std::get<kTrackPhi>(selectedTrackInformation.at(jTrack)))/2.0;
+            averagePairPhi = GetAveragePhi(std::get<kTrackPhi>(selectedTrackInformation.at(iTrack)), std::get<kTrackPhi>(selectedTrackInformation.at(jTrack)));
             
             fillerTrackPair[0] = pairDeltaR;                                               // Axis 0: DeltaR between the two tracks
             fillerTrackPair[1] = std::get<kTrackPt>(selectedTrackInformation.at(iTrack));  // Axis 1: Higher track pT
@@ -538,6 +551,11 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
         
         // Once we have looped over all the tracks, only loop over tracks that pass the cuts to construct all possible track pairings
         for(Int_t iTrack = 0; iTrack < selectedTrackInformation.size(); iTrack++){
+          
+          // For generator level particles, apply the same cuts as for reconstructed ones in order to get consistent yields
+          if(TMath::Abs(std::get<kTrackEta>(selectedTrackInformation.at(iTrack))) > fTriggerEtaCut) continue;  // Stricter eta cut for trigger particles
+          if(fCutBadPhiRegionTrigger && (std::get<kTrackPhi>(selectedTrackInformation.at(iTrack)) > -0.1 && std::get<kTrackPhi>(selectedTrackInformation.at(iTrack)) < 1.2)) continue; // Do not let the trigger particle to be in the phi region with bad tracker performance
+          
           for(Int_t jTrack = iTrack+1; jTrack < selectedTrackInformation.size(); jTrack++){
 
             // Calculate the distance of the two tracks from each other
@@ -548,7 +566,7 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
 
               // Calculate the average pair eta and phi positions
               averagePairEta = (std::get<kTrackEta>(selectedTrackInformation.at(iTrack))+std::get<kTrackEta>(selectedTrackInformation.at(jTrack)))/2.0;
-              averagePairPhi = (std::get<kTrackPhi>(selectedTrackInformation.at(iTrack))+std::get<kTrackPhi>(selectedTrackInformation.at(jTrack)))/2.0;
+              averagePairPhi = GetAveragePhi(std::get<kTrackPhi>(selectedTrackInformation.at(iTrack)), std::get<kTrackPhi>(selectedTrackInformation.at(jTrack)));
 
               fillerTrackPair[0] = pairDeltaR;                                               // Axis 0: DeltaR between the two tracks
               fillerTrackPair[1] = std::get<kTrackPt>(selectedTrackInformation.at(iTrack));  // Axis 1: Higher particle pT
@@ -940,4 +958,25 @@ Double_t TrackPairEfficiencyAnalyzer::GetDeltaR(const Double_t eta1, const Doubl
   // Return the distance between the objects
   return TMath::Sqrt(deltaPhi*deltaPhi + deltaEta*deltaEta);
   
+}
+
+/*
+ * Get an average phi value of two phi values
+ */
+Double_t TrackPairEfficiencyAnalyzer::GetAveragePhi(const Double_t phi1, const Double_t phi2) const{
+  
+  // There is a special case when the values are closer to pi than zero, when the average should also be pi rather than zero
+  if((phi1 > TMath::Pi()/2.0 && phi2 < -TMath::Pi()+phi1) || (phi1 < -TMath::Pi()/2.0 && phi2 > TMath::Pi()-phi1) || (phi2 > TMath::Pi()/2.0 && phi1 < -TMath::Pi()+phi2) || (phi2 < -TMath::Pi()/2.0 && phi1 > TMath::Pi()-phi2)){
+    
+    // Check if we need to rotate to negative of positive side
+    if(phi1+phi2 > 0){
+      return -TMath::Pi() + ((phi1+phi2)/2.0);
+    }
+    
+    return TMath::Pi() + ((phi1+phi2)/2.0);
+    
+  }
+  
+  // If we are not in the special case, return the simple average
+  return (phi1+phi2)/2.0;
 }

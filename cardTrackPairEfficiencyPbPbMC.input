@@ -16,6 +16,8 @@ MaxMaxTrackPtFraction 0.98 # Maximum fraction of jet pT taken by the highest pT 
 
 # Cuts for tracks
 TrackEtaCut 2.4             # Region in eta around midrapidity from which tracks are accepted
+TriggerEtaCut 1.6           # Stricter eta cut for trigger particle
+CutBadPhiTrigger 1          # Do not let trigger particle to be in the problematic phi region
 MinTrackPtCut 0.7           # Minimum track pT considered in the analysis
 MaxTrackPtCut 500           # Maximum track pT considered in the analysis
 MaxTrackPtRelativeError 0.1 # Maximum relative error allowed for track pT

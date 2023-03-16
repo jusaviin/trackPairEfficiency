@@ -30,10 +30,12 @@ public:
     kJetEtaCut,                 // Eta cut for jets
     kMinPtCut,                  // Minimum allowed pT for the inclusive jets
     kMaxPtCut,                  // Maximum allowed pT for the inclusive jets
-    kCutBadPhiRegion,           // Cut the phi region with bad tracked performance from the analysis
+    kCutBadPhiRegion,           // Cut the phi region with bad tracker performance from the analysis
     kMinMaxTrackPtFraction,     // Minimum fraction of jet pT taken by the highest pT track in jet
     kMaxMaxTrackPtFraction,     // Maximum fraction of jet pT taken by the highest pT track in jet
     kTrackEtaCut,               // Eta cut for tracks
+    kTriggerEtaCut,             // Stricter eta cut for the trigger particle
+    kCutBadPhiRegionTrigger,    // Do not let the trigger particle to be in the phi region with bad tracker performance
     kMinTrackPtCut,             // Minimum accepted track pT
     kMaxTrackPtCut,             // Maximum accepted track pT
     kMaxTrackPtRelativeError,   // Maximum relative error allowed for track pT
@@ -58,7 +60,7 @@ public:
 private:
   
   // Names for each entry read from the configuration card
-  const char *fCardEntryNames[knEntries] = {"DataType","UseTrigger","JetType","JetAxis","JetEtaCut","MinJetPtCut","MaxJetPtCut","CutBadPhi","MinMaxTrackPtFraction","MaxMaxTrackPtFraction","TrackEtaCut","MinTrackPtCut","MaxTrackPtCut","MaxTrackPtRelativeError","VertexMaxDistance","CalorimeterSignalLimitPt","HighPtEtFraction","Chi2QualityCut","MinimumTrackHits","SubeventCut","ZVertexCut","LowPtHatCut","HighPtHatCut","CentralityBinEdges","TrackPtBinEdges","TrackPairPtBinEdges","PtHatBinEdges"};
+  const char *fCardEntryNames[knEntries] = {"DataType","UseTrigger","JetType","JetAxis","JetEtaCut","MinJetPtCut","MaxJetPtCut","CutBadPhi","MinMaxTrackPtFraction","MaxMaxTrackPtFraction","TrackEtaCut","TriggerEtaCut","CutBadPhiTrigger","MinTrackPtCut","MaxTrackPtCut","MaxTrackPtRelativeError","VertexMaxDistance","CalorimeterSignalLimitPt","HighPtEtFraction","Chi2QualityCut","MinimumTrackHits","SubeventCut","ZVertexCut","LowPtHatCut","HighPtHatCut","CentralityBinEdges","TrackPtBinEdges","TrackPairPtBinEdges","PtHatBinEdges"};
   const char *fFileNameType[knFileNames] = {"input"};
   const char *fFileNameSaveName[knFileNames] = {"InputFile"};
   
