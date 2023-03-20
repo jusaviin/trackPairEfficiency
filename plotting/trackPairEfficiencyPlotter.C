@@ -588,7 +588,7 @@ void trackPairEfficiencyPlotter(){
   
   // Option to write the smoothed histograms to a file to be used as correction
   if(writeSmoothedHistograms){
-    TFile* outputFile = TFile::Open("trackPairEfficiencyCorrectionTable_PbPb2018.root","RECREATE");
+    TFile* outputFile = TFile::Open("trackPairEfficiencyCorrectionTableWithCard_PbPb2018.root","RECREATE");
     
     for(int iCentrality = firstDrawCentralityBin; iCentrality <= lastDrawnCentralityBin; iCentrality++){
       for(int iTriggerPt = firstDrawnTriggerPtBin; iTriggerPt <= lastDrawnTriggerPtBin; iTriggerPt++){
@@ -597,6 +597,9 @@ void trackPairEfficiencyPlotter(){
         } // Associated pT loo
       } // Trigger pT loop
     } // Centrality loop
+    
+    // Write the card to the file
+    systemCard->Write(outputFile);
   }
   
 }
