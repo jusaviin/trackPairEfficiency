@@ -26,9 +26,12 @@ TrackPairEfficiencyHistogramManager::TrackPairEfficiencyHistogramManager() :
   fLastLoadedTrackPtBin(1),
   fFirstLoadedTrackPairPtBin(0),
   fLastLoadedTrackPairPtBin(1),
+  fFirstLoadedAverageEtaBin(0),
+  fLastLoadedAverageEtaBin(1),
   fnCentralityBins(kMaxCentralityBins),
   fnTrackPtBins(kMaxTrackPtBins),
-  fnTrackPairPtBins(kMaxTrackPtBins)
+  fnTrackPairPtBins(kMaxTrackPtBins),
+  fnAverageEtaBins(kMaxAverageEtaBins)
 {
   
   // Do not load tracks by default
@@ -53,6 +56,12 @@ TrackPairEfficiencyHistogramManager::TrackPairEfficiencyHistogramManager() :
     fTrackPtBinBorders[iTrackPt] = 0;
     fTrackPairPtBinIndices[iTrackPt] = iTrackPt + 1;
     fTrackPairPtBinBorders[iTrackPt] = 0;
+  }
+  
+  // Default binning for average pair eta
+  for(int iAverageEta = 0; iAverageEta < kMaxAverageEtaBins + 1; iAverageEta++){
+    fAverageEtaBinIndices[iAverageEta] = iAverageEta+1;
+    fAverageEtaBinBorders[iAverageEta] = 0;
   }
   
   // Initialize all the other histograms to null
@@ -95,7 +104,9 @@ TrackPairEfficiencyHistogramManager::TrackPairEfficiencyHistogramManager() :
     for(int iDataLevel = 0; iDataLevel < TrackPairEfficiencyHistograms::knDataLevels; iDataLevel++){
       for(int iTriggerPt = 0; iTriggerPt < kMaxTrackPtBins + 1; iTriggerPt++){
         for(int iAssociatedPt = 0; iAssociatedPt < kMaxTrackPtBins + 1; iAssociatedPt++){
-          fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iDataLevel] = NULL;
+          for(int iAverageEta = 0; iAverageEta < kMaxAverageEtaBins+1; iAverageEta++){
+            fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta][iDataLevel] = NULL;
+          }
         } // Associated pT loop
       } // Trigger pT loop
     } // Data level loop
@@ -151,6 +162,7 @@ void TrackPairEfficiencyHistogramManager::InitializeFromCard(){
   fnCentralityBins = fCard->GetNCentralityBins();
   fnTrackPtBins = fCard->GetNTrackPtBins();
   fnTrackPairPtBins = fCard->GetNTrackPairPtBins();
+  fnAverageEtaBins = fCard->GetNAverageEtaBins();
   
   // Centrality binning
   for(int iCentrality = 0; iCentrality <= fnCentralityBins; iCentrality++){
@@ -169,6 +181,12 @@ void TrackPairEfficiencyHistogramManager::InitializeFromCard(){
     fTrackPairPtBinBorders[iTrackPt] = fCard->GetLowBinBorderTrackPairPt(iTrackPt);
   }
   fLastLoadedTrackPairPtBin = fnTrackPairPtBins-1;
+  
+  // Average pair eta binning
+  for(int iAverageEta = 0; iAverageEta <= fnAverageEtaBins; iAverageEta++){
+    fAverageEtaBinBorders[iAverageEta] = fCard->GetLowBinBorderAverageEta(iAverageEta);
+  }
+  fLastLoadedAverageEtaBin = fnAverageEtaBins;
   
   // Remove centrality selection from pp data and local testing
   if(collisionSystem.Contains("pp") || collisionSystem.Contains("localTest")){
@@ -195,6 +213,8 @@ TrackPairEfficiencyHistogramManager::TrackPairEfficiencyHistogramManager(const T
   fLastLoadedTrackPtBin(in.fLastLoadedTrackPtBin),
   fFirstLoadedTrackPairPtBin(0),
   fLastLoadedTrackPairPtBin(1),
+  fFirstLoadedAverageEtaBin(0),
+  fLastLoadedAverageEtaBin(1),
   fhVertexZ(in.fhVertexZ),
   fhVertexZWeighted(in.fhVertexZWeighted),
   fhEvents(in.fhEvents),
@@ -227,6 +247,12 @@ TrackPairEfficiencyHistogramManager::TrackPairEfficiencyHistogramManager(const T
     fTrackPairPtBinBorders[iTrackPt] = in.fTrackPairPtBinBorders[iTrackPt];
   }
   
+  // Copy binning for average pair eta
+  for(int iAverageEta = 0; iAverageEta < kMaxAverageEtaBins + 1; iAverageEta++){
+    fAverageEtaBinIndices[iAverageEta] = in.fAverageEtaBinIndices[iAverageEta];
+    fAverageEtaBinBorders[iAverageEta] = in.fAverageEtaBinBorders[iAverageEta];
+  }
+  
   // Centrality loop
   for(int iCentrality = 0; iCentrality < kMaxCentralityBins; iCentrality++){
     for(int iDataLevel = 0; iDataLevel < TrackPairEfficiencyHistograms::knDataLevels; iDataLevel++){
@@ -256,7 +282,9 @@ TrackPairEfficiencyHistogramManager::TrackPairEfficiencyHistogramManager(const T
     for(int iDataLevel = 0; iDataLevel < TrackPairEfficiencyHistograms::knDataLevels; iDataLevel++){
       for(int iTriggerPt = 0; iTriggerPt < kMaxTrackPtBins + 1; iTriggerPt++){
         for(int iAssociatedPt = 0; iAssociatedPt < kMaxTrackPtBins + 1; iAssociatedPt++){
-          fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iDataLevel] = in.fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iDataLevel];
+          for(int iAverageEta = 0; iAverageEta < kMaxAverageEtaBins + 1; iAverageEta++){
+            fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta][iDataLevel] = in.fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta][iDataLevel];
+          }
         } // Associated pT loop
       } // Trigger pT loop
     } // Data level loop
@@ -455,19 +483,21 @@ void TrackPairEfficiencyHistogramManager::LoadTrackHistograms(){
 void TrackPairEfficiencyHistogramManager::LoadTrackPairHistograms(){
   
   // Define arrays to help find the histograms
-  int axisIndices[3] = {0};
-  int lowLimits[3] = {0};
-  int highLimits[3] = {0};
+  int axisIndices[4] = {0};
+  int lowLimits[4] = {0};
+  int highLimits[4] = {0};
+  int nProjectionAxes = 3;
   
   // Define helper variables
-  int duplicateRemoverCentrality = -1;
+  int duplicateRemover = -1;
   int lowerCentralityBin = 0;
   int higherCentralityBin = 0;
-  int duplicateRemoverTrackPt = -1;
   int lowerTriggerPtBin = 0;
   int higherTriggerPtBin = 0;
   int lowerAssociatedPtBin = 0;
   int higherAssociatedPtBin = 0;
+  int lowerAverageEtaBin = 0;
+  int higherAverageEtaBin = 0;
   
   // Loop over all track histograms
   for(int iDataLevel = 0; iDataLevel < TrackPairEfficiencyHistograms::knDataLevels; iDataLevel++){
@@ -481,7 +511,7 @@ void TrackPairEfficiencyHistogramManager::LoadTrackPairHistograms(){
       
       // Select the bin indices
       lowerCentralityBin = fCentralityBinIndices[iCentrality];
-      higherCentralityBin = fCentralityBinIndices[iCentrality+1]+duplicateRemoverCentrality;
+      higherCentralityBin = fCentralityBinIndices[iCentrality+1]+duplicateRemover;
       
       // Setup axes with restrictions, (5 = centrality)
       axisIndices[0] = 5; lowLimits[0] = lowerCentralityBin; highLimits[0] = higherCentralityBin;
@@ -491,7 +521,7 @@ void TrackPairEfficiencyHistogramManager::LoadTrackPairHistograms(){
         
         // Select the bin indices for track pT
         lowerTriggerPtBin = fTrackPairPtBinIndices[iTriggerPt];
-        higherTriggerPtBin = fTrackPairPtBinIndices[iTriggerPt+1]+duplicateRemoverTrackPt;
+        higherTriggerPtBin = fTrackPairPtBinIndices[iTriggerPt+1]+duplicateRemover;
         
         // Add restriction for trigger pT axis (1)
         axisIndices[1] = 1; lowLimits[1] = lowerTriggerPtBin; highLimits[1] = higherTriggerPtBin;
@@ -501,13 +531,29 @@ void TrackPairEfficiencyHistogramManager::LoadTrackPairHistograms(){
           
           // Select the bin indices for track pT
           lowerAssociatedPtBin = fTrackPairPtBinIndices[iAssociatedPt];
-          higherAssociatedPtBin = fTrackPairPtBinIndices[iAssociatedPt+1]+duplicateRemoverTrackPt;
+          higherAssociatedPtBin = fTrackPairPtBinIndices[iAssociatedPt+1]+duplicateRemover;
           
           // Add restriction for associated pT axis (2)
           axisIndices[2] = 2; lowLimits[2] = lowerAssociatedPtBin; highLimits[2] = higherAssociatedPtBin;
           
-          // Read the deltaR distribution histograms
-          fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iDataLevel] = FindHistogram(histogramArray, 0, 3, axisIndices, lowLimits, highLimits);
+          for(int iAverageEta = fFirstLoadedAverageEtaBin; iAverageEta <= fLastLoadedAverageEtaBin; iAverageEta++){
+            
+            // Add a new projection axis if we are not in the average eta integral bin index
+            if(iAverageEta < fnAverageEtaBins){
+              nProjectionAxes = 4;
+              lowerAverageEtaBin = fAverageEtaBinIndices[iAverageEta];
+              higherAverageEtaBin = fAverageEtaBinIndices[iAverageEta+1]+duplicateRemover;
+              axisIndices[3] = 4; lowLimits[3] = lowerAverageEtaBin; highLimits[3] = higherAverageEtaBin;
+            } else {
+              // If we are not projecting, reset the range in the average eta axis of the histogram
+              nProjectionAxes = 3;
+              histogramArray->GetAxis(4)->SetRange(0,0);
+            }
+            
+            // Read the deltaR distribution histograms
+            fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta][iDataLevel] = FindHistogram(histogramArray, 0, nProjectionAxes, axisIndices, lowLimits, highLimits);
+            
+          }
           
         } // Associated pT loop
       } // Trigger pT loop
@@ -913,9 +959,18 @@ void TrackPairEfficiencyHistogramManager::WriteTrackPairHistograms(){
         // Associated pT loop
         for(int iAssociatedPt = fFirstLoadedTrackPairPtBin; iAssociatedPt <= iTriggerPt; iAssociatedPt++){
           
-          // DeltaR histogram without eta or phi selections
-          histogramNamer = Form("%sDeltaR_C%dT%dA%d", fTrackPairHistogramNames[iDataLevel], iCentrality, iTriggerPt, iAssociatedPt);
-          fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iDataLevel]->Write(histogramNamer.Data(), TObject::kOverwrite);
+          // DeltaR histograms in average pair eta bins
+          for(int iAverageEta = fFirstLoadedAverageEtaBin; iAverageEta <= fLastLoadedAverageEtaBin; iAverageEta++){
+            
+            if(iAverageEta == fnAverageEtaBins){
+              // DeltaR histograms without eta or phi selections
+              histogramNamer = Form("%sDeltaR_C%dT%dA%d", fTrackPairHistogramNames[iDataLevel], iCentrality, iTriggerPt, iAssociatedPt);
+            } else {
+              // DeltaR histograms in average eta bins
+              histogramNamer = Form("%sDeltaR_C%dT%dA%dE%d", fTrackPairHistogramNames[iDataLevel], iCentrality, iTriggerPt, iAssociatedPt, iAverageEta);
+            }
+            fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta][iDataLevel]->Write(histogramNamer.Data(), TObject::kOverwrite);
+          }
           
         } // Associated pT loop
       } // Trigger pT loop
@@ -1023,11 +1078,15 @@ void TrackPairEfficiencyHistogramManager::LoadProcessedHistograms(){
     for(int iCentrality = fFirstLoadedCentralityBin; iCentrality <= fLastLoadedCentralityBin; iCentrality++){
       for(int iTriggerPt = fFirstLoadedTrackPairPtBin; iTriggerPt <= fLastLoadedTrackPairPtBin; iTriggerPt++){
         for(int iAssociatedPt = fFirstLoadedTrackPairPtBin; iAssociatedPt <= iTriggerPt; iAssociatedPt++){
-          
-          // Track phi in track pT bins
-          histogramNamer = Form("%s/%sDeltaR_C%dT%dA%d", fTrackPairHistogramNames[iDataLevel], fTrackPairHistogramNames[iDataLevel], iCentrality, iTriggerPt, iAssociatedPt);
-          fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iDataLevel] = (TH1D*) fInputFile->Get(histogramNamer.Data());
-          
+          for(int iAverageEta = fFirstLoadedAverageEtaBin; iAverageEta <= fLastLoadedAverageEtaBin; iAverageEta++){
+            // DeltaR histograms without eta or phi selection
+            if(iAverageEta == fnAverageEtaBins){
+              histogramNamer = Form("%s/%sDeltaR_C%dT%dA%d", fTrackPairHistogramNames[iDataLevel], fTrackPairHistogramNames[iDataLevel], iCentrality, iTriggerPt, iAssociatedPt);
+            } else {
+              histogramNamer = Form("%s/%sDeltaR_C%dT%dA%dE%d", fTrackPairHistogramNames[iDataLevel], fTrackPairHistogramNames[iDataLevel], iCentrality, iTriggerPt, iAssociatedPt, iAverageEta);
+            }
+            fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta][iDataLevel] = (TH1D*) fInputFile->Get(histogramNamer.Data());
+          } // Average pair eta loop
         } // Associated pT loop
       } // Trigger pT loop
     } // Centrality loop
@@ -1140,7 +1199,21 @@ void TrackPairEfficiencyHistogramManager::SetTrackPtBins(const bool readBinsFrom
  */
 void TrackPairEfficiencyHistogramManager::SetTrackPairPtBins(const bool readBinsFromFile, const int nBins, const double *binBorders, const bool setIndices){
   
-  SetGenericBins(readBinsFromFile, "trackPairs", 1, fnTrackPairPtBins, fTrackPairPtBinBorders, fTrackPairPtBinIndices, nBins, binBorders, "track pT", kMaxTrackPtBins, setIndices);
+  SetGenericBins(readBinsFromFile, "trackPairs", 1, fnTrackPairPtBins, fTrackPairPtBinBorders, fTrackPairPtBinIndices, nBins, binBorders, "track pair pT", kMaxTrackPtBins, setIndices);
+  
+}
+
+/*
+ * Set up track pT bin borders and indices according to provided bin borders for track pair histograms
+ *
+ *  const bool readBinsFromFile = True: Disregard given bins ans use the ones in fCard. False: Use given bins
+ *  const int nBins = Number of given track pT bins
+ *  const double *binBorders = New bin borders for track pT
+ *  const bool setIndices = Set the bin indices in THnSparse
+ */
+void TrackPairEfficiencyHistogramManager::SetAverageEtaBins(const bool readBinsFromFile, const int nBins, const double *binBorders, const bool setIndices){
+  
+  SetGenericBins(readBinsFromFile, "trackPairs", 4, fnAverageEtaBins, fAverageEtaBinBorders, fAverageEtaBinIndices, nBins, binBorders, "average eta", kMaxAverageEtaBins, setIndices);
   
 }
 
@@ -1224,6 +1297,15 @@ void TrackPairEfficiencyHistogramManager::SetTrackPairPtBinRange(const int first
   BinSanityCheck(fnTrackPairPtBins,fFirstLoadedTrackPairPtBin,fLastLoadedTrackPairPtBin);
 }
 
+// Setter for loaded average pair eta bins
+void TrackPairEfficiencyHistogramManager::SetAverageEtaBinRange(const int first, const int last){
+  fFirstLoadedAverageEtaBin = first;
+  fLastLoadedAverageEtaBin = last;
+  
+  // Sanity check for average pair eta bins
+  BinSanityCheck(fnAverageEtaBins+1,fFirstLoadedAverageEtaBin,fLastLoadedAverageEtaBin);
+}
+
 // Sanity check for set bins
 void TrackPairEfficiencyHistogramManager::BinSanityCheck(const int nBins, int& first, int& last){
   if(first < 0) first = 0;
@@ -1251,6 +1333,11 @@ int TrackPairEfficiencyHistogramManager::GetNTrackPtBins() const{
 // Getter for the number of track pT bins in track pair histograms
 int TrackPairEfficiencyHistogramManager::GetNTrackPairPtBins() const{
   return fnTrackPairPtBins;
+}
+
+// Getter for the number of average eta bins in track pair histograms
+int TrackPairEfficiencyHistogramManager::GetNAverageEtaBins() const{
+  return fnAverageEtaBins;
 }
 
 // Getter for the jet histogram name
@@ -1283,6 +1370,10 @@ double TrackPairEfficiencyHistogramManager::GetTrackPairPtBinBorder(const int iT
   return fTrackPairPtBinBorders[iTrackPt];
 }
 
+// Getter for i:th average eta bin border in track pair histograms
+double TrackPairEfficiencyHistogramManager::GetAverageEtaBinBorder(const int iAverageEta) const{
+  return fAverageEtaBinBorders[iAverageEta];
+}
 
 // Getters for event information histograms
 
@@ -1362,8 +1453,8 @@ TH2D* TrackPairEfficiencyHistogramManager::GetHistogramTrackEtaPhi(const int iTr
 // Getters for track pair histograms
 
 // Getter for DeltaR between tracks in pT and centrality bins
-TH1D* TrackPairEfficiencyHistogramManager::GetHistogramTrackPairDeltaR(const int iCentrality, const int iTriggerPt, const int iAssociatedPt, const int iDataLevel) const{
-  return fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iDataLevel];
+TH1D* TrackPairEfficiencyHistogramManager::GetHistogramTrackPairDeltaR(const int iCentrality, const int iTriggerPt, const int iAssociatedPt, const int iAverageEta, const int iDataLevel) const{
+  return fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta][iDataLevel];
 }
 
 // The rest

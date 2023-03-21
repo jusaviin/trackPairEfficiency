@@ -24,6 +24,7 @@ public:
   // Dimensions for histogram arrays
   static const int kMaxCentralityBins = 5;       // Maximum allowed number of centrality bins
   static const int kMaxTrackPtBins = 15;         // Maximum allowed number of track pT bins
+  static const int kMaxAverageEtaBins = 10;      // Maximum allowed number of average eta bins
   
   // Indices for different track histogram categories
   enum enumTrackHistograms{kTrack, kUncorrectedTrack, kGenParticle, knTrackCategories};
@@ -57,9 +58,10 @@ public:
   void LoadProcessedHistograms(); // Load processed histograms from the inputfile
   
   // Setters for binning information
-  void SetCentralityBins(const bool readBinsFromFile, const int nBins, const double *binBorders, bool setIndices = true); // Set up centrality bin indices according to provided bin borders
-  void SetTrackPtBins(const bool readBinsFromFile, const int nBins, const double *binBorders, bool setIndices = true);    // Set up track pT bin indices according to provided bin borders
-  void SetTrackPairPtBins(const bool readBinsFromFile, const int nBins, const double *binBorders, bool setIndices = true);    // Set up track pT bin indices for track pair histograms according to provided bin borders
+  void SetCentralityBins(const bool readBinsFromFile, const int nBins, const double *binBorders, const bool setIndices = true); // Set up centrality bin indices according to provided bin borders
+  void SetTrackPtBins(const bool readBinsFromFile, const int nBins, const double *binBorders, const bool setIndices = true);    // Set up track pT bin indices according to provided bin borders
+  void SetTrackPairPtBins(const bool readBinsFromFile, const int nBins, const double *binBorders, const bool setIndices = true);    // Set up track pT bin indices for track pair histograms according to provided bin borders
+  void SetAverageEtaBins(const bool readBinsFromFile, const int nBins, const double *binBorders, const bool setIndices = true);    // Set up average pair eta bin indices for track pair histograms according to provided bin borders
   
   // Setters for event information and dijets
   void SetLoadEventInformation(const bool loadOrNot); // Setter for loading event information
@@ -85,14 +87,17 @@ public:
   void SetCentralityBinRange(const int first, const int last);  // Setter for centrality bin range
   void SetTrackPtBinRange(const int first, const int last);     // Setter for track pT bin range
   void SetTrackPairPtBinRange(const int first, const int last); // Setter for track pT bin range for track pair histograms
+  void SetAverageEtaBinRange(const int first, const int last);  // Setter for loaded average pair eta bins
   
   // Getters for number of bins in histograms
   int GetNCentralityBins() const;  // Getter for the number of centrality bins
   int GetNTrackPtBins() const;     // Getter for the number of track pT bins
   int GetNTrackPairPtBins() const; // Getter for the number of track pT bins in track pair histograms
+  int GetNAverageEtaBins() const;  // Getter for the number of average eta bins in track pair histograms
   double GetCentralityBinBorder(const int iCentrality) const;  // Getter for i:th centrality bin border
   double GetTrackPtBinBorder(const int iTrackPt) const;        // Getter for i:th track pT bin border
   double GetTrackPairPtBinBorder(const int iTrackPt) const;    // Getter for i:th track pT bin border in track pair histograms
+  double GetAverageEtaBinBorder(const int iAverageEta) const;  // Getter for i:th average eta bin border in track pair histograms
   
   // Getters for histogram and axis naming
   const char* GetJetHistogramName() const; // Getter for the jet histogram name
@@ -120,7 +125,7 @@ public:
   TH2D* GetHistogramTrackEtaPhi(const int iTrackType, const int iCentrality, const int iTrackPt) const; // 2D eta-phi histogram for track
   
   // Getters for track pair histograms
-  TH1D* GetHistogramTrackPairDeltaR(const int iCentrality, const int iTriggerPt, const int iAssociatedPt, const int iDataLevel) const; // Track pair DeltaR histograms
+  TH1D* GetHistogramTrackPairDeltaR(const int iCentrality, const int iTriggerPt, const int iAssociatedPt, const int iAverageEta, const int iDataLevel) const; // Track pair DeltaR histograms
   
   // Getters for the loaded centrality bins
   int GetFirstCentralityBin() const;  // Get the first loaded centrality bin
@@ -162,6 +167,8 @@ private:
   int fLastLoadedTrackPtBin;      // Last track pT bin that is loaded
   int fFirstLoadedTrackPairPtBin; // First track pair pT bin that is loaded
   int fLastLoadedTrackPairPtBin;  // Last track pair pT bin that is loaded
+  int fFirstLoadedAverageEtaBin;  // First average pair eta bin that is loaded
+  int fLastLoadedAverageEtaBin;   // Last average pair eta bin that is loaded
   
   // =============================================
   // ============ Binning information ============
@@ -172,9 +179,12 @@ private:
   double fTrackPtBinBorders[kMaxTrackPtBins+1];       // Track pT bin borders, from which bin indices are obtained
   int fTrackPairPtBinIndices[kMaxTrackPtBins+1];      // Indices for track pT bins in track pair histograms
   double fTrackPairPtBinBorders[kMaxTrackPtBins+1];   // Track pT bin borders in track pair histograms, from which bin indices are obtained
+  int fAverageEtaBinIndices[kMaxAverageEtaBins+1];    // Indices for average pair eta bins in track pair histograms
+  double fAverageEtaBinBorders[kMaxAverageEtaBins+1]; // Average eta bin borders for track pair histograms
   int fnCentralityBins;                               // Number of centrality bins in the JCard of the data file
   int fnTrackPtBins;                                  // Number of track pT bins in the JCard of the data file
   int fnTrackPairPtBins;                              // Number of track pT bins in track pair histograms in the JCard of the data file
+  int fnAverageEtaBins;                               // Number of average eta bins projected from the histograms
   
   // =============================================
   // ===== Histograms for the dijet analysis =====
@@ -204,7 +214,7 @@ private:
   TH2D *fhTrackEtaPhi[knTrackCategories][kMaxCentralityBins][kMaxTrackPtBins+1]; // 2D eta-phi histograms for tracks
   
   // Histograms for track pairs
-  TH1D *fhTrackPairDeltaR[kMaxCentralityBins][kMaxTrackPtBins+1][kMaxTrackPtBins+1][TrackPairEfficiencyHistograms::knDataLevels];
+  TH1D *fhTrackPairDeltaR[kMaxCentralityBins][kMaxTrackPtBins+1][kMaxTrackPtBins+1][kMaxAverageEtaBins+1][TrackPairEfficiencyHistograms::knDataLevels];
   
   // Private methods
   void InitializeFromCard(); // Initialize several member variables from TrackPairEfficiencyCard

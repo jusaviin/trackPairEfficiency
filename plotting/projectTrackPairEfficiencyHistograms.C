@@ -67,19 +67,24 @@ void projectTrackPairEfficiencyHistograms(TString inputFileName = "veryCoolData.
   const int nCentralityBins = 4;
   const int nTrackPtBins = 7;
   const int nTrackPairPtBins = 7;
+  const int nAverageEtaBins = 6;
   double centralityBinBorders[nCentralityBins+1] = {0,10,30,50,90};      // Bin borders for centrality
   double trackPtBinBorders[nTrackPtBins+1] = {0.7,1,2,3,4,8,12,300};     // Bin borders for track pT
   double trackPairPtBinBorders[nTrackPtBins+1] = {0.7,1,2,3,4,8,12,300}; // Bin borders for track pT in track pair histograms
+  double averageEtaBinBorders[nAverageEtaBins+1] = {-2.4, -1, -0.5, 0, 0.5, 1, 2.4};  // Bin borders for average eta slices
   
   // Projected bin range
-  int firstDrawnCentralityBin = 0;
-  int lastDrawnCentralityBin = nCentralityBins-1;
+  int firstProjectedCentralityBin = 0;
+  int lastProjectedCentralityBin = nCentralityBins-1;
   
-  int firstDrawnTrackPtBin = 0;
-  int lastDrawnTrackPtBin = nTrackPtBins-1;
+  int firstProjectedTrackPtBin = 0;
+  int lastProjectedTrackPtBin = nTrackPtBins-1;
   
-  int firstDrawnTrackPairPtBin = 0;
-  int lastDrawnTrackPairPtBin = nTrackPairPtBins-1;
+  int firstProjectedTrackPairPtBin = 0;
+  int lastProjectedTrackPairPtBin = nTrackPairPtBins-1;
+  
+  int firstProjectedAverageEtaBin = 0;
+  int lastProjectedAverageEtaBin = nAverageEtaBins;  // Histograms without eta selection are in the last bin
 
   
   // ==================================================================
@@ -102,7 +107,7 @@ void projectTrackPairEfficiencyHistograms(TString inputFileName = "veryCoolData.
   
   // Remove centrality selection from pp data
   if(collisionSystem.Contains("pp")){
-    lastDrawnCentralityBin = 0;
+    lastProjectedCentralityBin = 0;
     centralityBinBorders[0] = -0.5;
   }
   
@@ -110,6 +115,7 @@ void projectTrackPairEfficiencyHistograms(TString inputFileName = "veryCoolData.
   if(!readCentralityBinsFromFile) card->AddVector(TrackPairEfficiencyCard::kCentralityBinEdges,nCentralityBins+1,centralityBinBorders);
   if(!readTrackPtBinsFromFile) card->AddVector(TrackPairEfficiencyCard::kTrackPtBinEdges,nTrackPtBins+1,trackPtBinBorders);
   if(!readTrackPairPtBinsFromFile) card->AddVector(TrackPairEfficiencyCard::kTrackPairPtBinEdges,nTrackPairPtBins+1,trackPairPtBinBorders);
+  card->AddVector(TrackPairEfficiencyCard::kAverageEtaBinEdges,nAverageEtaBins+1,averageEtaBinBorders);
   
   // Add information about the used input files to the card
   card->AddFileName(TrackPairEfficiencyCard::kInputFileName,inputFileName);
@@ -138,11 +144,13 @@ void projectTrackPairEfficiencyHistograms(TString inputFileName = "veryCoolData.
 
   // Set the binning information
   histograms->SetCentralityBins(readCentralityBinsFromFile,nCentralityBins,centralityBinBorders,true);
-  if(!readCentralityBinsFromFile) histograms->SetCentralityBinRange(firstDrawnCentralityBin,lastDrawnCentralityBin);
+  if(!readCentralityBinsFromFile) histograms->SetCentralityBinRange(firstProjectedCentralityBin,lastProjectedCentralityBin);
   histograms->SetTrackPtBins(readTrackPtBinsFromFile,nTrackPtBins,trackPtBinBorders,true);
-  if(!readTrackPtBinsFromFile) histograms->SetTrackPtBinRange(firstDrawnTrackPtBin,lastDrawnTrackPtBin);
+  if(!readTrackPtBinsFromFile) histograms->SetTrackPtBinRange(firstProjectedTrackPtBin,lastProjectedTrackPtBin);
   histograms->SetTrackPairPtBins(readTrackPairPtBinsFromFile,nTrackPairPtBins,trackPairPtBinBorders,true);
-  if(!readTrackPairPtBinsFromFile) histograms->SetTrackPairPtBinRange(firstDrawnTrackPairPtBin,lastDrawnTrackPairPtBin);
+  if(!readTrackPairPtBinsFromFile) histograms->SetTrackPairPtBinRange(firstProjectedTrackPairPtBin,lastProjectedTrackPairPtBin);
+  histograms->SetAverageEtaBins(false,nAverageEtaBins,averageEtaBinBorders,true);
+  histograms->SetAverageEtaBinRange(firstProjectedAverageEtaBin,lastProjectedAverageEtaBin);
   
   // Project the one dimensional histograms from the THnSparses
   histograms->LoadHistograms();
