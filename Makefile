@@ -2,7 +2,7 @@ PROGRAM       = trackPairEfficiencyAnalysis
 
 version       = development
 CXX           = g++
-CXXFLAGS      = -g -Wall -Wno-deprecated -D$(version) 
+CXXFLAGS      = -g -Wall -Wno-bitwise-instead-of-logical -D$(version) 
 LD            = g++
 LDFLAGS       = -O2
 SOFLAGS       = -shared
