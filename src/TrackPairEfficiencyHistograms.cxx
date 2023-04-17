@@ -213,7 +213,7 @@ void TrackPairEfficiencyHistograms::CreateHistograms(){
   }
   
   // Logarithmic deltaR binning for energy-energy correlator histograms
-  const Int_t nDeltaRBinsEEC = 60;
+  const Int_t nDeltaRBinsEEC = 40;
   const Double_t minDeltaREEC = 0;
   const Double_t maxDeltaREEC = 0.8;
   const Double_t binnerShift = 0.01;

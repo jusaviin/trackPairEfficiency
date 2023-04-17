@@ -527,21 +527,21 @@ void ForestReader::Initialize(){
   }
   
   // Connect the branches to the jet tree
-  const char *jetAxis[2] = {"jt", "WTA"};
-  const char *genJetAxis[2] = {"", "WTA"};
-  char branchName[30];
+  const char* jetAxis[2] = {"jt", "WTA"};
+  const char* genJetAxis[2] = {"", "WTA"};
+  const char* branchName;
   
   fJetTree->SetBranchStatus("*",0);
   fJetTree->SetBranchStatus("jtpt",1);
   fJetTree->SetBranchAddress("jtpt",&fJetPtArray,&fJetPtBranch);
   
   // If specified, select WTA axis for jet phi
-  sprintf(branchName,"%sphi",jetAxis[fJetAxis]);
+  branchName = Form("%sphi",jetAxis[fJetAxis]);
   fJetTree->SetBranchStatus(branchName,1);
   fJetTree->SetBranchAddress(branchName,&fJetPhiArray,&fJetPhiBranch);
   
   // If specified, select WTA axis for jet eta
-  sprintf(branchName,"%seta",jetAxis[fJetAxis]);
+  branchName = Form("%seta",jetAxis[fJetAxis]);
   fJetTree->SetBranchStatus(branchName,1);
   fJetTree->SetBranchAddress(branchName,&fJetEtaArray,&fJetEtaBranch);
   
@@ -558,12 +558,12 @@ void ForestReader::Initialize(){
     fJetTree->SetBranchAddress("genpt",&fGenJetPtArray,&fGenJetPtBranch);
     
     // If specified, select WTA axis for jet phi
-    sprintf(branchName,"%sgenphi",genJetAxis[fJetAxis]);
+    branchName = Form("%sgenphi",genJetAxis[fJetAxis]);
     fJetTree->SetBranchStatus(branchName,1);
     fJetTree->SetBranchAddress(branchName,&fGenJetPhiArray,&fGenJetPhiBranch);
     
     // If specified, select WTA axis for jet eta
-    sprintf(branchName,"%sgeneta",genJetAxis[fJetAxis]);
+    branchName = Form("%sgeneta",genJetAxis[fJetAxis]);
     fJetTree->SetBranchStatus(branchName,1);
     fJetTree->SetBranchAddress(branchName,&fGenJetEtaArray,&fGenJetEtaBranch);
     
