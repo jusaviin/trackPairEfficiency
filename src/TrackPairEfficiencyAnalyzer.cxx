@@ -634,6 +634,61 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
         
         fHistograms->fhInclusiveJet->Fill(fillerJet,fTotalEventWeight*jetPtWeight); // Fill the data point to histogram
         
+        //******************************************************************************************************************
+        //         Find all the tracks that are close to this jet and fill the pair efficiency histograms for them
+        //******************************************************************************************************************
+
+        // Clear the selected track vectors
+        selectedTrackInformation.clear();
+
+        // Loop over all track in the event
+        nTracks = fEventReader->GetNTracks();
+        for(Int_t iTrack = 0; iTrack < nTracks; iTrack++){
+        
+          // Check that all the track cuts are passed
+          if(!PassTrackCuts(fEventReader,iTrack,fHistograms->fhTrackCuts,true)) continue;
+        
+          // Get the track information and add it to vector
+          trackPt = fEventReader->GetTrackPt(iTrack);
+          trackEta = fEventReader->GetTrackEta(iTrack);
+          trackPhi = fEventReader->GetTrackPhi(iTrack);
+          trackEfficiency = GetTrackEfficiencyCorrection(iTrack);
+
+          if(GetDeltaR(jetEta, jetPhi, trackEta, trackPhi) < 0.4){
+            selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, trackEfficiency));
+          }
+        
+        } // Track loop
+
+        FillTrackPairsCloseToJets(selectedTrackInformation, jetPt, centrality, TrackPairEfficiencyHistograms::kReconstructed, fHistograms->fhTrackPairsCloseToJet);
+
+        //******************************************************************************************************************
+        //        Find all the particles that are close to this jet and fill the pair efficiency histograms for them
+        //******************************************************************************************************************
+
+        // Clear the selected track vectors
+        selectedTrackInformation.clear();
+
+        // Loop over all track in the event
+        nTracks = fEventReader->GetNGenParticles();
+        for(Int_t iTrack = 0; iTrack < nTracks; iTrack++){
+        
+          // Check that all the track cuts are passed
+          if(!PassGenParticleSelection(fEventReader,iTrack,fHistograms->fhTrackCuts,true)) continue;
+        
+          // Get the track information and add it to vector
+          trackPt = fEventReader->GetGenParticlePt(iTrack);
+          trackEta = fEventReader->GetGenParticleEta(iTrack);
+          trackPhi = fEventReader->GetGenParticleEta(iTrack);
+
+          if(GetDeltaR(jetEta, jetPhi, trackEta, trackPhi) < 0.4){
+            selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, 1));
+          }
+        
+        } // Track loop
+
+        FillTrackPairsCloseToJets(selectedTrackInformation, jetPt, centrality, TrackPairEfficiencyHistograms::kReconstructed, fHistograms->fhGenParticlePairsCloseToJet);
+
       } // End of jet loop
       
       // For MC, do another jet loop using generator level jets
@@ -670,7 +725,62 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
           fillerJet[4] = TrackPairEfficiencyHistograms::kGeneratorLevel;   // Axis 4 = Generator level flag
           
           fHistograms->fhInclusiveJet->Fill(fillerJet,fTotalEventWeight*jetPtWeight); // Fill the data point to histogram
-          
+
+          //******************************************************************************************************************
+          //         Find all the tracks that are close to this jet and fill the pair efficiency histograms for them
+          //******************************************************************************************************************
+
+          // Clear the selected track vectors
+          selectedTrackInformation.clear();
+
+          // Loop over all track in the event
+          nTracks = fEventReader->GetNTracks();
+          for(Int_t iTrack = 0; iTrack < nTracks; iTrack++){
+
+            // Check that all the track cuts are passed
+            if(!PassTrackCuts(fEventReader, iTrack, fHistograms->fhTrackCuts, true)) continue;
+
+            // Get the track information and add it to vector
+            trackPt = fEventReader->GetTrackPt(iTrack);
+            trackEta = fEventReader->GetTrackEta(iTrack);
+            trackPhi = fEventReader->GetTrackPhi(iTrack);
+            trackEfficiency = GetTrackEfficiencyCorrection(iTrack);
+
+            if(GetDeltaR(jetEta, jetPhi, trackEta, trackPhi) < 0.4){
+              selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, trackEfficiency));
+            }
+
+          }  // Track loop
+
+          FillTrackPairsCloseToJets(selectedTrackInformation, jetPt, centrality, TrackPairEfficiencyHistograms::kGeneratorLevel, fHistograms->fhTrackPairsCloseToJet);
+
+          //******************************************************************************************************************
+          //        Find all the particles that are close to this jet and fill the pair efficiency histograms for them
+          //******************************************************************************************************************
+
+          // Clear the selected track vectors
+          selectedTrackInformation.clear();
+
+          // Loop over all track in the event
+          nTracks = fEventReader->GetNGenParticles();
+          for(Int_t iTrack = 0; iTrack < nTracks; iTrack++){
+
+            // Check that all the track cuts are passed
+            if(!PassGenParticleSelection(fEventReader, iTrack, fHistograms->fhTrackCuts, true)) continue;
+
+            // Get the track information and add it to vector
+            trackPt = fEventReader->GetGenParticlePt(iTrack);
+            trackEta = fEventReader->GetGenParticleEta(iTrack);
+            trackPhi = fEventReader->GetGenParticleEta(iTrack);
+
+            if(GetDeltaR(jetEta, jetPhi, trackEta, trackPhi) < 0.4){
+              selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, 1));
+            }
+
+          }  // Track loop
+
+          FillTrackPairsCloseToJets(selectedTrackInformation, jetPt, centrality, TrackPairEfficiencyHistograms::kGeneratorLevel, fHistograms->fhGenParticlePairsCloseToJet);
+
         } // End of jet loop
         
       } // MC if
@@ -689,6 +799,44 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
   
 }
 
+/*
+ * Fill the histograms for track pairs close to jets
+ *
+ *  Arguments:
+ *   vector<std::tuple<double,double,double,double>> selectedTrackInformation = pT, eta, phi and efficiency information for tracks that are paired and close to jets
+ *   Double_t jetPt = pT of the jets these tracks are close to
+ *   Double_t centrality = Centrality of the event
+ *   Int_t iDataLevel = 0: Reconstructed jets, 1 = Generator level jets
+ *   THnSparseF* filledHistogram = Histogram to which the pairs are filled
+ */
+void TrackPairEfficiencyAnalyzer::FillTrackPairsCloseToJets(vector<std::tuple<double,double,double,double>> selectedTrackInformation, Double_t jetPt, Double_t centrality, Int_t iDataLevel, THnSparseF* filledHistogram){
+
+  // Helper variables
+  Double_t fillerTrackPair[6];      // Track pair histogram filler
+  Double_t pairDeltaR;
+
+  // Sort the vector such that the larger track pT will always be assigned to the first slot
+  std::sort(selectedTrackInformation.begin(), selectedTrackInformation.end(), std::greater<std::tuple<double, double, double, double>>());
+
+  // Once we have looped over the selected tracks
+  for(Int_t iTrack = 0; iTrack < selectedTrackInformation.size(); iTrack++) {
+    for(Int_t jTrack = iTrack + 1; jTrack < selectedTrackInformation.size(); jTrack++) {
+
+      // Calculate the distance of the two tracks from each other
+      pairDeltaR = GetDeltaR(std::get<kTrackEta>(selectedTrackInformation.at(iTrack)), std::get<kTrackPhi>(selectedTrackInformation.at(iTrack)), std::get<kTrackEta>(selectedTrackInformation.at(jTrack)), std::get<kTrackPhi>(selectedTrackInformation.at(jTrack)));
+
+      // Fill the track pair histograms for tracks relatively close to each other
+      fillerTrackPair[0] = pairDeltaR;                                                // Axis 0: DeltaR between the two tracks
+      fillerTrackPair[1] = std::get<kTrackPt>(selectedTrackInformation.at(iTrack));   // Axis 1: Higher particle pT
+      fillerTrackPair[2] = std::get<kTrackPt>(selectedTrackInformation.at(jTrack));   // Axis 2: Lower particle pT
+      fillerTrackPair[3] = jetPt;                                                     // Axis 3: Jet pT
+      fillerTrackPair[4] = iDataLevel;                                                // Axis 4: Reconstructed/generator level jet
+      fillerTrackPair[5] = centrality;                                                // Axis 5: Centrality
+      fHistograms->fhTrackPairsCloseToJet->Fill(fillerTrackPair, fTotalEventWeight);  // Fill the track pair histogram close to jets
+
+    }  // Inner track loop
+  }    // Outer track loop
+}
 
 /*
  * Get the proper vz weighting depending on analyzed system

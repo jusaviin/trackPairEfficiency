@@ -29,6 +29,8 @@ TrackPairEfficiencyHistograms::TrackPairEfficiencyHistograms() :
   fhInclusiveJet(0),
   fhTrackPairs(0),
   fhGenParticlePairs(0),
+  fhTrackPairsCloseToJet(0),
+  fhGenParticlePairsCloseToJet(0),
   fCard(0)
 {
   // Default constructor
@@ -54,6 +56,8 @@ TrackPairEfficiencyHistograms::TrackPairEfficiencyHistograms(ConfigurationCard *
   fhInclusiveJet(0),
   fhTrackPairs(0),
   fhGenParticlePairs(0),
+  fhTrackPairsCloseToJet(0),
+  fhGenParticlePairsCloseToJet(0),
   fCard(newCard)
 {
   // Custom constructor
@@ -79,6 +83,8 @@ TrackPairEfficiencyHistograms::TrackPairEfficiencyHistograms(const TrackPairEffi
   fhInclusiveJet(in.fhInclusiveJet),
   fhTrackPairs(in.fhTrackPairs),
   fhGenParticlePairs(in.fhGenParticlePairs),
+  fhTrackPairsCloseToJet(in.fhTrackPairsCloseToJet),
+  fhGenParticlePairsCloseToJet(in.fhGenParticlePairsCloseToJet),
   fCard(in.fCard)
 {
   // Copy constructor
@@ -108,6 +114,8 @@ TrackPairEfficiencyHistograms& TrackPairEfficiencyHistograms::operator=(const Tr
   fhInclusiveJet = in.fhInclusiveJet;
   fhTrackPairs = in.fhTrackPairs;
   fhGenParticlePairs = in.fhGenParticlePairs;
+  fhTrackPairsCloseToJet = in.fhTrackPairsCloseToJet;
+  fhGenParticlePairsCloseToJet = in.fhGenParticlePairsCloseToJet;
   fCard = in.fCard;
   
   return *this;
@@ -133,12 +141,14 @@ TrackPairEfficiencyHistograms::~TrackPairEfficiencyHistograms(){
   delete fhInclusiveJet;
   delete fhTrackPairs;
   delete fhGenParticlePairs;
+  delete fhTrackPairsCloseToJet;
+  delete fhGenParticlePairsCloseToJet;
 }
 
 /*
  * Set the configuration card used for the histogram class
  */
-void TrackPairEfficiencyHistograms::SetCard(ConfigurationCard *newCard){
+void TrackPairEfficiencyHistograms::SetCard(ConfigurationCard* newCard){
   fCard = newCard;
 }
 
@@ -211,6 +221,15 @@ void TrackPairEfficiencyHistograms::CreateHistograms(){
   for(Int_t iPtHat = 0; iPtHat < nPtHatBins+1; iPtHat++){
     ptHatBins[iPtHat] = fCard->Get("PtHatBinEdges",iPtHat);
   }
+
+  // Jet pT binning for energy-energy correlator histograms
+  const Int_t nJetPtBinsEEC = fCard->GetNBin("JetPtBinEdgesEEC");
+  Double_t jetPtBinsEEC[nJetPtBinsEEC+1];
+  for(Int_t iJetPt = 0; iJetPt < nJetPtBinsEEC+1; iJetPt++){
+    jetPtBinsEEC[iJetPt] = fCard->Get("JetPtBinEdgesEEC",iJetPt);
+  }
+  const Double_t minJetPtEEC = jetPtBinsEEC[0];
+  const Double_t maxJetPtEEC = jetPtBinsEEC[nJetPtBinsEEC];
   
   // Logarithmic deltaR binning for energy-energy correlator histograms
   const Int_t nDeltaRBinsEEC = 40;
@@ -237,6 +256,11 @@ void TrackPairEfficiencyHistograms::CreateHistograms(){
   Int_t nBinsTrackPair[nAxesTrackPair];
   Double_t lowBinBorderTrackPair[nAxesTrackPair];
   Double_t highBinBorderTrackPair[nAxesTrackPair];
+
+  const Int_t nAxesTrackPairCloseToJet = 6;
+  Int_t nBinsTrackPairCloseToJet[nAxesTrackPairCloseToJet];
+  Double_t lowBinBorderTrackPairCloseToJet[nAxesTrackPairCloseToJet];
+  Double_t highBinBorderTrackPairCloseToJet[nAxesTrackPairCloseToJet];
   
   // ======== Plain TH1 histograms ========
   
@@ -382,6 +406,62 @@ void TrackPairEfficiencyHistograms::CreateHistograms(){
   // Set custom centrality bins for histograms
   fhTrackPairs->SetBinEdges(5,wideCentralityBins);
   fhGenParticlePairs->SetBinEdges(5,wideCentralityBins);
+
+  // ======== THnSparses for track pairs close to jets ========
+  
+  // Axis 0 for the track pair close to jets histogram: deltaR between the two tracks
+  nBinsTrackPairCloseToJet[0] = nDeltaRBinsEEC;         // nBins for deltaR between the tracks
+  lowBinBorderTrackPairCloseToJet[0] = minDeltaREEC;    // low bin border for deltaR between the tracks
+  highBinBorderTrackPairCloseToJet[0] = maxDeltaREEC;   // high bin border for deltaR between the tracks
+  
+  // Axis 1 for the track pair close to jets histogram: track pT for the first track
+  nBinsTrackPairCloseToJet[1] = nWideTrackPtBins;         // nBins for wide track pT
+  lowBinBorderTrackPairCloseToJet[1] = minWideTrackPt;    // low bin border for wide track pT
+  highBinBorderTrackPairCloseToJet[1] = maxWideTrackPt;   // high bin border for wide track pT
+  
+  // Axis 2 for the track pair close to jets histogram: track pT for the second track
+  nBinsTrackPairCloseToJet[2] = nWideTrackPtBins;         // nBins for wide track pT
+  lowBinBorderTrackPairCloseToJet[2] = minWideTrackPt;    // low bin border for wide track pT
+  highBinBorderTrackPairCloseToJet[2] = maxWideTrackPt;   // high bin border for wide track pT
+  
+  // Axis 3 for the track pair close to jets histogram: jet pT
+  nBinsTrackPairCloseToJet[3] = nJetPtBinsEEC;         // nBins for jet pT
+  lowBinBorderTrackPairCloseToJet[3] = minJetPtEEC;    // low bin border for jet pT
+  highBinBorderTrackPairCloseToJet[3] = maxJetPtEEC;   // high bin border for jet pT
+  
+  // Axis 4 for the jet histogram: jet type (reconstructed / generator level)
+  nBinsTrackPairCloseToJet[4] = nDataLevelBins;       // nBins different data levels
+  lowBinBorderTrackPairCloseToJet[4] = minDataLevel;  // low bin border for data levels
+  highBinBorderTrackPairCloseToJet[4] = maxDataLevel; // high bin border for data levels
+
+  // Axis 5 for the track pair close to jets histogram: centrality
+  nBinsTrackPairCloseToJet[5] = nWideCentralityBins;   // nBins for wide centrality bins
+  lowBinBorderTrackPairCloseToJet[5] = minCentrality;  // low bin border for centrality
+  highBinBorderTrackPairCloseToJet[5] = maxCentrality; // high bin border for centrality
+
+  
+  
+  // Create the histograms for tracks and uncorrected tracks using the above binning information
+  fhTrackPairsCloseToJet = new THnSparseF("trackPairsCloseToJet", "trackPairsCloseToJet", nAxesTrackPairCloseToJet, nBinsTrackPairCloseToJet, lowBinBorderTrackPairCloseToJet, highBinBorderTrackPairCloseToJet); fhTrackPairsCloseToJet->Sumw2();
+  fhGenParticlePairsCloseToJet = new THnSparseF("genParticlePairsCloseToJet","genParticlePairsCloseToJet", nAxesTrackPairCloseToJet, nBinsTrackPairCloseToJet,lowBinBorderTrackPairCloseToJet, highBinBorderTrackPairCloseToJet); fhGenParticlePairsCloseToJet->Sumw2();
+
+  // Set custom deltaR bins for histograms
+  fhTrackPairsCloseToJet->SetBinEdges(0,deltaRBinsEEC);
+  fhGenParticlePairsCloseToJet->SetBinEdges(0,deltaRBinsEEC);
+  
+  // Set custom track pT bins for histograms
+  fhTrackPairsCloseToJet->SetBinEdges(1,wideTrackPtBins);
+  fhGenParticlePairsCloseToJet->SetBinEdges(1,wideTrackPtBins);
+  fhTrackPairsCloseToJet->SetBinEdges(2,wideTrackPtBins);
+  fhGenParticlePairsCloseToJet->SetBinEdges(2,wideTrackPtBins);
+  
+  // Set custom jet pT bins for the histograms
+  fhTrackPairsCloseToJet->SetBinEdges(3,jetPtBinsEEC);
+  fhGenParticlePairsCloseToJet->SetBinEdges(3,jetPtBinsEEC);
+
+  // Set custom centrality bins for histograms
+  fhTrackPairsCloseToJet->SetBinEdges(5,wideCentralityBins);
+  fhGenParticlePairsCloseToJet->SetBinEdges(5,wideCentralityBins);
 }
 
 /*
@@ -405,6 +485,8 @@ void TrackPairEfficiencyHistograms::Write() const{
   fhInclusiveJet->Write();
   fhTrackPairs->Write();
   fhGenParticlePairs->Write();
+  fhTrackPairsCloseToJet->Write();
+  fhGenParticlePairsCloseToJet->Write();
   
 }
 
