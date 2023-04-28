@@ -9,7 +9,7 @@
 void trackPairEfficiencyPlotter(){
   
   // File containing the track pair distributions used to determine the track pair efficiency
-  TString fileName = "data/trackPairEfficiency_triggerFiducialCut_newBins_fixedCentrality_processed_2023-04-10.root";
+  TString fileName = "veryCoolData_processed.root";
   // trackPairEfficiencyPp_triggerEta1p6_newBins_processed_2023-04-10.root
   // trackPairEfficiency_triggerFiducialCut_newBins_fixedCentrality_processed_2023-04-10.root
   
@@ -30,6 +30,7 @@ void trackPairEfficiencyPlotter(){
   
   const int nCentralityBins = (isPbPbData) ? systemCard->GetNCentralityBins() : 1;
   const int nTrackPtBins = systemCard->GetNTrackPairPtBins();
+  const int nJetPtBins = systemCard->GetNJetPtBins();
   const int nAverageEtaBins = systemCard->GetNAverageEtaBins();
   
   // ====================================================
@@ -40,11 +41,14 @@ void trackPairEfficiencyPlotter(){
   const int firstDrawnCentralityBin = 0;
   const int lastDrawnCentralityBin = nCentralityBins-1;
   
-  const int firstDrawnTriggerPtBin = 0;
-  const int lastDrawnTriggerPtBin = nTrackPtBins-1;
+  const int firstDrawnTriggerPtBin = 5;
+  const int lastDrawnTriggerPtBin = 5;
   
   const int firstDrawnAssociatedPtBin = 0;
-  const int lastDrawnAssociatedPtBin = nTrackPtBins-1;
+  const int lastDrawnAssociatedPtBin = 5;
+
+  const int firstDrawnJetPtBin = 0;
+  const int lastDrawnJetPtBin = nJetPtBins-1;
   
   int firstDrawnAverageEtaBin = nAverageEtaBins;
   int lastDrawnAverageEtaBin = nAverageEtaBins;
@@ -63,6 +67,7 @@ void trackPairEfficiencyPlotter(){
   const bool drawSmoothedComparison = false;     // Draw the figures comparing smoothed and non-smoothed distributions in each bin
   const bool drawPtBinComparison = false;        // Draw a comparison of different pT bins to find pT trends
   const bool drawEtaRegionComparison = false;    // Draw the figures comparing the different average eta selections for the same pT and centrality bins
+  const bool drawJetPtComparison = true;         // Draw the comparison of different jet pT selections to see if there is a trend
   
   // Figure saving
   const bool saveFigures = false;  // Save figures
@@ -70,26 +75,39 @@ void trackPairEfficiencyPlotter(){
   const char* figureFormat = "pdf"; // Format given for the figures
   
   // Histogram saving
-  const bool writeSmoothedHistograms = true; // Write flag for smoothed histograms
+  const bool writeSmoothedHistograms = false; // Write flag for smoothed histograms
   
   // Create and setup a new histogram managers to project and handle the histograms
   TrackPairEfficiencyHistogramManager *histograms;
   histograms = new TrackPairEfficiencyHistogramManager(inputFile);
   histograms->SetCentralityBinRange(firstDrawnCentralityBin, lastDrawnCentralityBin);
   histograms->SetTrackPairPtBinRange(TMath::Min(firstDrawnTriggerPtBin, firstDrawnAssociatedPtBin), TMath::Max(lastDrawnTriggerPtBin, lastDrawnAssociatedPtBin));
+  histograms->SetJetPtBinRange(firstDrawnJetPtBin, lastDrawnJetPtBin);
   histograms->SetAverageEtaBinRange(firstDrawnAverageEtaBin, lastDrawnAverageEtaBin);
   histograms->SetLoadAllTrackPairs(true,true);
+  histograms->SetLoadAllTrackPairsCloseToJets(true,true);
   histograms->LoadProcessedHistograms();
   
-  // Jet pT histograms to calculate trigger turn on curve
+  // Track pair histograms to calculate the pair efficiency
   TH1D* hTrackDeltaR[nCentralityBins][nTrackPtBins][nTrackPtBins][nAverageEtaBins+1][TrackPairEfficiencyHistograms::knDataLevels];   // DeltaR distribution for track pairs
+  TH1D* hTrackDeltaRCloseToJet[TrackPairEfficiencyHistograms::knDataLevels][TrackPairEfficiencyHistograms::knDataLevels][nCentralityBins][nTrackPtBins][nTrackPtBins][nJetPtBins+1];   // DeltaR distribution for track pairs close to jets
   TH1D* hRatioDeltaR[nCentralityBins][nTrackPtBins][nTrackPtBins][nAverageEtaBins+1]; // Reconstructed to generator level ratio of track pair DeltaR distributions
+  TH1D* hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::knDataLevels][nCentralityBins][nTrackPtBins][nTrackPtBins][nJetPtBins+1]; // Reconstructed to generator level ratio of track pair DeltaR distributions close to jets
   TH1D* hRatioDeltaRSmoothed[nCentralityBins][nTrackPtBins][nTrackPtBins][nAverageEtaBins+1]; // Smoothed reconstructed to generator level ratio of track pair DeltaR distributions
   
   // Initialize all histograms to NULL
   for(int iCentrality = 0; iCentrality < nCentralityBins; iCentrality++){
     for(int iTriggerPt = 0; iTriggerPt < nTrackPtBins; iTriggerPt++){
       for(int iAssociatedPt = 0; iAssociatedPt < nTrackPtBins; iAssociatedPt++){
+        for(int iJetPt = 0; iJetPt < nJetPtBins+1; iJetPt++){
+          for(int iDataLevelJets = 0; iDataLevelJets < TrackPairEfficiencyHistograms::knDataLevels; iDataLevelJets++){
+            for(int iDataLevelTracks = 0; iDataLevelTracks < TrackPairEfficiencyHistograms::knDataLevels; iDataLevelTracks++){
+              hTrackDeltaRCloseToJet[iDataLevelJets][iDataLevelTracks][iCentrality][iTriggerPt][iAssociatedPt][iJetPt] = NULL;
+            } // Track data level loop
+            hRatioDeltaRCloseToJet[iDataLevelJets][iCentrality][iTriggerPt][iAssociatedPt][iJetPt] = NULL;
+          } // Data level loop for jets
+        } // Jet pT loop
+
         for(int iAverageEta = 0; iAverageEta < nAverageEtaBins+1; iAverageEta++){
           for(int iDataLevel = 0; iDataLevel < TrackPairEfficiencyHistograms::knDataLevels; iDataLevel++){
             hTrackDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta][iDataLevel] = NULL;
@@ -110,6 +128,13 @@ void trackPairEfficiencyPlotter(){
             hTrackDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta][iDataLevel] = histograms->GetHistogramTrackPairDeltaR(iCentrality, iTriggerPt, iAssociatedPt, iAverageEta, iDataLevel);
           } // Data level loop
         } // Average pair eta loop
+        for(int iDataLevelTracks = 0; iDataLevelTracks < TrackPairEfficiencyHistograms::knDataLevels; iDataLevelTracks++){
+          for(int iDataLevelJets = 0; iDataLevelJets < TrackPairEfficiencyHistograms::knDataLevels; iDataLevelJets++){
+            for(int iJetPt = firstDrawnJetPtBin; iJetPt <= lastDrawnJetPtBin; iJetPt++){
+              hTrackDeltaRCloseToJet[iDataLevelJets][iDataLevelTracks][iCentrality][iTriggerPt][iAssociatedPt][iJetPt] = histograms->GetHistogramTrackPairDeltaRCloseToJets(iDataLevelJets, iDataLevelTracks, iCentrality, iTriggerPt, iAssociatedPt, iJetPt);
+            } // Jet pT loop
+          } // Data level loop for jets
+        } // Data level loop for tracks
       } // Associated pT loo
     } // Trigger pT loop
   } // Centrality loop
@@ -148,409 +173,38 @@ void trackPairEfficiencyPlotter(){
           hRatioDeltaRSmoothed[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta] = (TH1D*) hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta]->Clone(histogramNamer.Data());
           hRatioDeltaRSmoothed[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta]->Smooth();
         } // Average pair eta loop
+
+        // Histograms in jet pT bins
+        for(int iDataLevelJets = 0; iDataLevelJets < TrackPairEfficiencyHistograms::knDataLevels; iDataLevelJets++){
+          for(int iJetPt = firstDrawnJetPtBin; iJetPt <= lastDrawnJetPtBin; iJetPt++){
+
+            // First, normalize the distributions such that the integrals match in the region 0.1-0.4
+          integralToMatch = hTrackDeltaRCloseToJet[iDataLevelJets][TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->Integral(lowBinLimit, highBinLimit, "width");
+          genLevelIntegral = hTrackDeltaRCloseToJet[iDataLevelJets][TrackPairEfficiencyHistograms::kGeneratorLevel][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->Integral(lowBinLimit, highBinLimit, "width");
+          hTrackDeltaRCloseToJet[iDataLevelJets][TrackPairEfficiencyHistograms::kGeneratorLevel][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->Scale(integralToMatch/genLevelIntegral);
+
+          // Then, calculate the ratio of the histograms
+          if(iJetPt == nJetPtBins){
+            histogramNamer = Form("trackPairEfficiencyCorrectionCloseTo%sJet_C%dT%dA%d", histograms->GetDataLevelName(iDataLevelJets), iCentrality, iTriggerPt, iAssociatedPt);
+          } else {
+            histogramNamer = Form("trackPairEfficiencyCorrectionCloseTo%sJet_C%dT%dA%dJ%d", histograms->GetDataLevelName(iDataLevelJets), iCentrality, iTriggerPt, iAssociatedPt, iJetPt);
+          }
+
+          hRatioDeltaRCloseToJet[iDataLevelJets][iCentrality][iTriggerPt][iAssociatedPt][iJetPt] = (TH1D*) hTrackDeltaRCloseToJet[iDataLevelJets][TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->Clone(histogramNamer.Data());
+          hRatioDeltaRCloseToJet[iDataLevelJets][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->Divide(hTrackDeltaRCloseToJet[iDataLevelJets][TrackPairEfficiencyHistograms::kGeneratorLevel][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]);
+
+          } // Jet pT loop
+        } // Data level loop for jets
       } // Associated pT loop
     } // Trigger pT loop
   } // Centrality loop
-  
-  // Manual extra smoothing. The smoothing does generally good job, but some histogram require a manual extra touch to get the smoothing satisfactory
-  // The values here fix the smoothing for file trackPairEfficiency_triggerFiducialCut_processed_2023-03-16.root
-  
-  /*if(firstDrawnCentralityBin == 0){
-    
-    // Centrality 0-10, trigger pT 3-4, associated pT 3-4
-    hRatioDeltaRSmoothed[0][3][3]->SetBinContent(5, 0.64);
-    hRatioDeltaRSmoothed[0][3][3]->SetBinContent(6, 0.672);
-    hRatioDeltaRSmoothed[0][3][3]->SetBinContent(7, 0.704);
-    hRatioDeltaRSmoothed[0][3][3]->SetBinContent(8, 0.736);
-    hRatioDeltaRSmoothed[0][3][3]->SetBinContent(9, 0.768);
-    hRatioDeltaRSmoothed[0][3][3]->SetBinContent(10, 0.8);
-    hRatioDeltaRSmoothed[0][3][3]->SetBinContent(11, 0.832);
-    
-    // Centrality 0-10, trigger pT 4-6, associated pT 2-3
-    hRatioDeltaRSmoothed[0][4][2]->SetBinContent(1, 0.4);
-    hRatioDeltaRSmoothed[0][4][2]->SetBinContent(2, 0.49);
-    hRatioDeltaRSmoothed[0][4][2]->SetBinContent(3, 0.56);
-    hRatioDeltaRSmoothed[0][4][2]->SetBinContent(4, 0.63);
-    hRatioDeltaRSmoothed[0][4][2]->SetBinContent(5, 0.69);
-    
-    // Centrality 0-10, trigger pT 4-6, associated pT 3-4
-    hRatioDeltaRSmoothed[0][4][3]->SetBinContent(2, 0.59);
-    hRatioDeltaRSmoothed[0][4][3]->SetBinContent(3, 0.62);
-    hRatioDeltaRSmoothed[0][4][3]->SetBinContent(4, 0.65);
-    hRatioDeltaRSmoothed[0][4][3]->SetBinContent(5, 0.68);
-    hRatioDeltaRSmoothed[0][4][3]->SetBinContent(6, 0.705);
-    
-    // Centrality 0-10, trigger pT 6-8, associated pT 2-3
-    hRatioDeltaRSmoothed[0][5][2]->SetBinContent(2, 0.55);
-    hRatioDeltaRSmoothed[0][5][2]->SetBinContent(3, 0.59);
-    hRatioDeltaRSmoothed[0][5][2]->SetBinContent(4, 0.64);
-    hRatioDeltaRSmoothed[0][5][2]->SetBinContent(5, 0.66);
-    hRatioDeltaRSmoothed[0][5][2]->SetBinContent(6, 0.68);
-    hRatioDeltaRSmoothed[0][5][2]->SetBinContent(7, 0.7);
-    
-    // Centrality 0-10, trigger pT 6-8, associated pT 3-4
-    hRatioDeltaRSmoothed[0][5][3]->SetBinContent(1, 0.3);
-    hRatioDeltaRSmoothed[0][5][3]->SetBinContent(2, 0.36);
-    hRatioDeltaRSmoothed[0][5][3]->SetBinContent(3, 0.41);
-    hRatioDeltaRSmoothed[0][5][3]->SetBinContent(4, 0.46);
-    hRatioDeltaRSmoothed[0][5][3]->SetBinContent(5, 0.5);
-    hRatioDeltaRSmoothed[0][5][3]->SetBinContent(6, 0.56);
-    hRatioDeltaRSmoothed[0][5][3]->SetBinContent(7, 0.62);
-    hRatioDeltaRSmoothed[0][5][3]->SetBinContent(8, 0.68);
-    hRatioDeltaRSmoothed[0][5][3]->SetBinContent(9, 0.73);
-    
-    // Centrality 0-10, trigger pT 8-12, associated pT 2-3
-    hRatioDeltaRSmoothed[0][6][2]->SetBinContent(2, 0.45);
-    hRatioDeltaRSmoothed[0][6][2]->SetBinContent(3, 0.51);
-    hRatioDeltaRSmoothed[0][6][2]->SetBinContent(4, 0.57);
-    hRatioDeltaRSmoothed[0][6][2]->SetBinContent(5, 0.63);
-    hRatioDeltaRSmoothed[0][6][2]->SetBinContent(6, 0.69);
-    hRatioDeltaRSmoothed[0][6][2]->SetBinContent(7, 0.72);
-    hRatioDeltaRSmoothed[0][6][2]->SetBinContent(8, 0.75);
-    hRatioDeltaRSmoothed[0][6][2]->SetBinContent(9, 0.78);
-    hRatioDeltaRSmoothed[0][6][2]->SetBinContent(10, 0.82);
-    hRatioDeltaRSmoothed[0][6][2]->SetBinContent(11, 0.85);
-    hRatioDeltaRSmoothed[0][6][2]->SetBinContent(12, 0.88);
-    
-    // Centrality 0-10, trigger pT 8-12, associated pT 4-6
-    hRatioDeltaRSmoothed[0][6][4]->SetBinContent(1, 0.3);
-    hRatioDeltaRSmoothed[0][6][4]->SetBinContent(2, 0.4);
-    hRatioDeltaRSmoothed[0][6][4]->SetBinContent(3, 0.5);
-    hRatioDeltaRSmoothed[0][6][4]->SetBinContent(4, 0.6);
-    
-    // Centrality 0-10, trigger pT 12-16, associated pT 4-6
-    hRatioDeltaRSmoothed[0][7][4]->SetBinContent(1, 0.2);
-    hRatioDeltaRSmoothed[0][7][4]->SetBinContent(2, 0.32);
-    hRatioDeltaRSmoothed[0][7][4]->SetBinContent(3, 0.4);
-    hRatioDeltaRSmoothed[0][7][4]->SetBinContent(4, 0.47);
-    hRatioDeltaRSmoothed[0][7][4]->SetBinContent(5, 0.54);
-    
-    // Centrality 0-10, trigger pT 12-16, associated pT 12-16
-    hRatioDeltaRSmoothed[0][7][7]->SetBinContent(1, 0.2);
-    hRatioDeltaRSmoothed[0][7][7]->SetBinContent(2, 0.29);
-    hRatioDeltaRSmoothed[0][7][7]->SetBinContent(3, 0.37);
-    hRatioDeltaRSmoothed[0][7][7]->SetBinContent(4, 0.43);
-    hRatioDeltaRSmoothed[0][7][7]->SetBinContent(5, 0.48);
-    
-    // Centrality 0-10, trigger pT 16-20 associated pT 2-3
-    hRatioDeltaRSmoothed[0][8][2]->SetBinContent(1, 0.35);
-    hRatioDeltaRSmoothed[0][8][2]->SetBinContent(2, 0.44);
-    hRatioDeltaRSmoothed[0][8][2]->SetBinContent(3, 0.52);
-    hRatioDeltaRSmoothed[0][8][2]->SetBinContent(4, 0.59);
-    hRatioDeltaRSmoothed[0][8][2]->SetBinContent(5, 0.65);
-    
-    // Centrality 0-10, trigger pT 16-20 associated pT 3-4
-    hRatioDeltaRSmoothed[0][8][3]->SetBinContent(3, 0.3);
-    hRatioDeltaRSmoothed[0][8][3]->SetBinContent(3, 0.4);
-    hRatioDeltaRSmoothed[0][8][3]->SetBinContent(4, 0.47);
-    hRatioDeltaRSmoothed[0][8][3]->SetBinContent(5, 0.54);
-    hRatioDeltaRSmoothed[0][8][3]->SetBinContent(6, 0.6);
-    
-    // Centrality 0-10, trigger pT 16-20 associated pT 8-12
-    hRatioDeltaRSmoothed[0][8][6]->SetBinContent(1, 0.3);
-    hRatioDeltaRSmoothed[0][8][6]->SetBinContent(2, 0.37);
-    hRatioDeltaRSmoothed[0][8][6]->SetBinContent(3, 0.44);
-    hRatioDeltaRSmoothed[0][8][6]->SetBinContent(4, 0.5);
-    
-    // Centrality 0-10, trigger pT 16-20 associated pT 12-16
-    hRatioDeltaRSmoothed[0][8][7]->SetBinContent(1, 0.25);
-    hRatioDeltaRSmoothed[0][8][7]->SetBinContent(2, 0.32);
-    hRatioDeltaRSmoothed[0][8][7]->SetBinContent(3, 0.39);
-    hRatioDeltaRSmoothed[0][8][7]->SetBinContent(4, 0.45);
-    
-    // Centrality 0-10, trigger pT 20-300 associated pT 2-3
-    hRatioDeltaRSmoothed[0][9][2]->SetBinContent(1, 0.4);
-    
-    // Centrality 0-10, trigger pT 20-300 associated pT 3-4
-    hRatioDeltaRSmoothed[0][9][3]->SetBinContent(2, 0.38);
-    hRatioDeltaRSmoothed[0][9][3]->SetBinContent(3, 0.6);
-    hRatioDeltaRSmoothed[0][9][3]->SetBinContent(4, 0.62);
-    hRatioDeltaRSmoothed[0][9][3]->SetBinContent(5, 0.635);
-    hRatioDeltaRSmoothed[0][9][3]->SetBinContent(6, 0.65);
-    hRatioDeltaRSmoothed[0][9][3]->SetBinContent(7, 0.66);
-    
-    // Centrality 0-10, trigger pT 20-300 associated pT 4-6
-    hRatioDeltaRSmoothed[0][9][4]->SetBinContent(1, 0.2);
-    hRatioDeltaRSmoothed[0][9][4]->SetBinContent(2, 0.26);
-    hRatioDeltaRSmoothed[0][9][4]->SetBinContent(3, 0.32);
-    hRatioDeltaRSmoothed[0][9][4]->SetBinContent(4, 0.38);
-    hRatioDeltaRSmoothed[0][9][4]->SetBinContent(5, 0.44);
-    hRatioDeltaRSmoothed[0][9][4]->SetBinContent(6, 0.49);
-    hRatioDeltaRSmoothed[0][9][4]->SetBinContent(7, 0.54);
-  }
-  
-  if(firstDrawnCentralityBin == 1 || (firstDrawnCentralityBin < 1 && lastDrawnCentralityBin >= 1)){
-    
-    // Centrality 10-30, trigger pT 4-6, associated pT 3-4
-    hRatioDeltaRSmoothed[1][4][3]->SetBinContent(1, 0.3);
-    hRatioDeltaRSmoothed[1][4][3]->SetBinContent(2, 0.37);
-    hRatioDeltaRSmoothed[1][4][3]->SetBinContent(3, 0.42);
-    hRatioDeltaRSmoothed[1][4][3]->SetBinContent(4, 0.47);
-    hRatioDeltaRSmoothed[1][4][3]->SetBinContent(5, 0.51);
-    
-    // Centrality 10-30, trigger pT 8-12, associated pT 3-4
-    hRatioDeltaRSmoothed[1][6][3]->SetBinContent(1, 0.35);
-    hRatioDeltaRSmoothed[1][6][3]->SetBinContent(2, 0.52);
-    
-    // Centrality 10-30, trigger pT 8-12, associated pT 8-12
-    hRatioDeltaRSmoothed[1][6][6]->SetBinContent(1, 0.4);
-    hRatioDeltaRSmoothed[1][6][6]->SetBinContent(2, 0.42);
-    hRatioDeltaRSmoothed[1][6][6]->SetBinContent(3, 0.44);
-    hRatioDeltaRSmoothed[1][6][6]->SetBinContent(4, 0.46);
-   
-    // Centrality 10-30, trigger pT 12-16, associated pT 3-4
-    hRatioDeltaRSmoothed[1][7][3]->SetBinContent(1, 0.2);
-    hRatioDeltaRSmoothed[1][7][3]->SetBinContent(2, 0.34);
-    hRatioDeltaRSmoothed[1][7][3]->SetBinContent(3, 0.45);
-    hRatioDeltaRSmoothed[1][7][3]->SetBinContent(4, 0.55);
-    hRatioDeltaRSmoothed[1][7][3]->SetBinContent(5, 0.60);
-    hRatioDeltaRSmoothed[1][7][3]->SetBinContent(6, 0.65);
-    hRatioDeltaRSmoothed[1][7][3]->SetBinContent(7, 0.70);
-    hRatioDeltaRSmoothed[1][7][3]->SetBinContent(8, 0.74);
-    hRatioDeltaRSmoothed[1][7][3]->SetBinContent(9, 0.78);
-    
-    // Centrality 10-30, trigger pT 16-20, associated pT 2-3
-    hRatioDeltaRSmoothed[1][8][2]->SetBinContent(1, 0.3);
-    hRatioDeltaRSmoothed[1][8][2]->SetBinContent(2, 0.55);
-    
-    // Centrality 10-30, trigger pT 16-20, associated pT 3-4
-    hRatioDeltaRSmoothed[1][8][3]->SetBinContent(1, 0.25);
-    hRatioDeltaRSmoothed[1][8][3]->SetBinContent(2, 0.32);
-    hRatioDeltaRSmoothed[1][8][3]->SetBinContent(3, 0.45);
-    hRatioDeltaRSmoothed[1][8][3]->SetBinContent(4, 0.55);
-    hRatioDeltaRSmoothed[1][8][3]->SetBinContent(5, 0.60);
-    hRatioDeltaRSmoothed[1][8][3]->SetBinContent(6, 0.65);
-    hRatioDeltaRSmoothed[1][8][3]->SetBinContent(7, 0.70);
-    hRatioDeltaRSmoothed[1][8][3]->SetBinContent(8, 0.74);
-    hRatioDeltaRSmoothed[1][8][3]->SetBinContent(9, 0.78);
-    
-    // Centrality 10-30, trigger pT 16-20, associated pT 4-6
-    hRatioDeltaRSmoothed[1][8][4]->SetBinContent(1, 0.3);
-    hRatioDeltaRSmoothed[1][8][4]->SetBinContent(2, 0.46);
-    hRatioDeltaRSmoothed[1][8][4]->SetBinContent(3, 0.52);
-    hRatioDeltaRSmoothed[1][8][4]->SetBinContent(4, 0.56);
-    hRatioDeltaRSmoothed[1][8][4]->SetBinContent(5, 0.6);
-    
-    // Centrality 10-30, trigger pT 16-20, associated pT 6-8
-    hRatioDeltaRSmoothed[1][8][5]->SetBinContent(1, 0.4);
-    hRatioDeltaRSmoothed[1][8][5]->SetBinContent(2, 0.43);
-    hRatioDeltaRSmoothed[1][8][5]->SetBinContent(3, 0.46);
-    hRatioDeltaRSmoothed[1][8][5]->SetBinContent(4, 0.52);
-    hRatioDeltaRSmoothed[1][8][5]->SetBinContent(5, 0.56);
-    hRatioDeltaRSmoothed[1][8][5]->SetBinContent(6, 0.6);
-    
-    // Centrality 10-30, trigger pT 16-20, associated pT 16-20
-    hRatioDeltaRSmoothed[1][8][8]->SetBinContent(1, 0.3);
-    hRatioDeltaRSmoothed[1][8][8]->SetBinContent(2, 0.35);
-    
-    // Centrality 10-30, trigger pT 20-300, associated pT 4-6
-    hRatioDeltaRSmoothed[1][9][4]->SetBinContent(1, 0.3);
-    hRatioDeltaRSmoothed[1][9][4]->SetBinContent(2, 0.38);
-    hRatioDeltaRSmoothed[1][9][4]->SetBinContent(3, 0.44);
-    hRatioDeltaRSmoothed[1][9][4]->SetBinContent(4, 0.52);
-    hRatioDeltaRSmoothed[1][9][4]->SetBinContent(5, 0.57);
-    hRatioDeltaRSmoothed[1][9][4]->SetBinContent(6, 0.62);
-    
-    // Centrality 10-30, trigger pT 20-300, associated pT 6-8
-    hRatioDeltaRSmoothed[1][9][5]->SetBinContent(1, 0.5);
-    hRatioDeltaRSmoothed[1][9][5]->SetBinContent(2, 0.55);
-    
-    // Centrality 10-30, trigger pT 20-300, associated pT 8-12
-    hRatioDeltaRSmoothed[1][9][6]->SetBinContent(1, 0.32);
-    hRatioDeltaRSmoothed[1][9][6]->SetBinContent(2, 0.42);
-    hRatioDeltaRSmoothed[1][9][6]->SetBinContent(3, 0.5);
-    hRatioDeltaRSmoothed[1][9][6]->SetBinContent(4, 0.56);
-    
-    // Centrality 10-30, trigger pT 20-300, associated pT 16-20
-    hRatioDeltaRSmoothed[1][9][8]->SetBinContent(1, 0.4);
-    hRatioDeltaRSmoothed[1][9][8]->SetBinContent(2, 0.45);
-    hRatioDeltaRSmoothed[1][9][8]->SetBinContent(3, 0.5);
-    hRatioDeltaRSmoothed[1][9][8]->SetBinContent(4, 0.55);
-  }
-  
-  if(firstDrawnCentralityBin == 2 || (firstDrawnCentralityBin < 2 && lastDrawnCentralityBin >= 2)){
-    
-    // Centrality 30-50, trigger pT 4-6, associated pT 3-4
-    hRatioDeltaRSmoothed[2][4][3]->SetBinContent(1, 0.28);
-    hRatioDeltaRSmoothed[2][4][3]->SetBinContent(2, 0.5);
-    hRatioDeltaRSmoothed[2][4][3]->SetBinContent(3, 0.54);
-    hRatioDeltaRSmoothed[2][4][3]->SetBinContent(4, 0.58);
-    hRatioDeltaRSmoothed[2][4][3]->SetBinContent(5, 0.62);
-    
-    // Centrality 30-50, trigger pT 4-6, associated pT 4-6
-    hRatioDeltaRSmoothed[2][4][4]->SetBinContent(1, 0.2);
-    hRatioDeltaRSmoothed[2][4][4]->SetBinContent(2, 0.38);
-    hRatioDeltaRSmoothed[2][4][4]->SetBinContent(3, 0.44);
-    hRatioDeltaRSmoothed[2][4][4]->SetBinContent(5, 0.5);
-    
-    // Centrality 30-50, trigger pT 6-8, associated pT 3-4
-    hRatioDeltaRSmoothed[2][5][3]->SetBinContent(1, 0.2);
-    
-    // Centrality 30-50, trigger pT 6-8, associated pT 6-8
-    hRatioDeltaRSmoothed[2][5][5]->SetBinContent(1, 0.15);
-    hRatioDeltaRSmoothed[2][5][5]->SetBinContent(2, 0.4);
-    
-    // Centrality 30-50, trigger pT 8-12, associated pT 2-3
-    hRatioDeltaRSmoothed[2][6][2]->SetBinContent(1, 0.4);
-    
-    // Centrality 30-50, trigger pT 8-12, associated pT 3-4
-    hRatioDeltaRSmoothed[2][6][3]->SetBinContent(1, 0.25);
-    hRatioDeltaRSmoothed[2][6][3]->SetBinContent(2, 0.45);
-    hRatioDeltaRSmoothed[2][6][3]->SetBinContent(3, 0.52);
-    hRatioDeltaRSmoothed[2][6][3]->SetBinContent(4, 0.55);
-    hRatioDeltaRSmoothed[2][6][3]->SetBinContent(5, 0.58);
-    hRatioDeltaRSmoothed[2][6][3]->SetBinContent(6, 0.61);
-    hRatioDeltaRSmoothed[2][6][3]->SetBinContent(7, 0.64);
-    hRatioDeltaRSmoothed[2][6][3]->SetBinContent(8, 0.67);
-    hRatioDeltaRSmoothed[2][6][3]->SetBinContent(9, 0.7);
-    
-    // Centrality 30-50, trigger pT 8-12, associated pT 4-6
-    hRatioDeltaRSmoothed[2][6][4]->SetBinContent(1, 0.3);
-    hRatioDeltaRSmoothed[2][6][4]->SetBinContent(2, 0.52);
-    hRatioDeltaRSmoothed[2][6][4]->SetBinContent(3, 0.57);
-    hRatioDeltaRSmoothed[2][6][4]->SetBinContent(4, 0.62);
-    
-    // Centrality 30-50, trigger pT 12-16, associated pT 2-3
-    hRatioDeltaRSmoothed[2][7][2]->SetBinContent(1, 0.25);
-    hRatioDeltaRSmoothed[2][7][2]->SetBinContent(2, 0.52);
-    hRatioDeltaRSmoothed[2][7][2]->SetBinContent(3, 0.65);
-    
-    // Centrality 30-50, trigger pT 12-16, associated pT 12-16
-    hRatioDeltaRSmoothed[2][7][7]->SetBinContent(1, 0.2);
-    hRatioDeltaRSmoothed[2][7][7]->SetBinContent(2, 0.5);
-    hRatioDeltaRSmoothed[2][7][7]->SetBinContent(3, 0.58);
-    
-    // Centrality 30-50, trigger pT 16-20, associated pT 2-3
-    hRatioDeltaRSmoothed[2][8][2]->SetBinContent(1, 0.2);
-    
-    // Centrality 30-50, trigger pT 16-20, associated pT 3-4
-    hRatioDeltaRSmoothed[2][8][3]->SetBinContent(1, 0.2);
-    
-    // Centrality 30-50, trigger pT 16-20, associated pT 4-6
-    hRatioDeltaRSmoothed[2][8][4]->SetBinContent(2, 0.55);
-    hRatioDeltaRSmoothed[2][8][4]->SetBinContent(3, 0.6);
-    hRatioDeltaRSmoothed[2][8][4]->SetBinContent(4, 0.63);
-    hRatioDeltaRSmoothed[2][8][4]->SetBinContent(5, 0.66);
-    hRatioDeltaRSmoothed[2][8][4]->SetBinContent(6, 0.69);
-    
-    // Centrality 30-50, trigger pT 16-20, associated pT 8-12
-    hRatioDeltaRSmoothed[2][8][6]->SetBinContent(1, 0.42);
-    hRatioDeltaRSmoothed[2][8][6]->SetBinContent(2, 0.47);
-    hRatioDeltaRSmoothed[2][8][6]->SetBinContent(3, 0.52);
-    hRatioDeltaRSmoothed[2][8][6]->SetBinContent(4, 0.57);
-    
-    // Centrality 30-50, trigger pT 16-20, associated pT 16-20
-    hRatioDeltaRSmoothed[2][8][8]->SetBinContent(1, 0.38);
-    hRatioDeltaRSmoothed[2][8][8]->SetBinContent(2, 0.45);
-    
-    // Centrality 30-50, trigger pT 20-300, associated pT 8-12
-    hRatioDeltaRSmoothed[2][9][6]->SetBinContent(1, 0.52);
-    hRatioDeltaRSmoothed[2][9][6]->SetBinContent(2, 0.62);
-    hRatioDeltaRSmoothed[2][9][6]->SetBinContent(3, 0.65);
-    hRatioDeltaRSmoothed[2][9][6]->SetBinContent(4, 0.68);
-  }
-  
-  if(firstDrawnCentralityBin == 3 || (firstDrawnCentralityBin < 3 && lastDrawnCentralityBin >= 3)){
-   
-    // Centrality 50-90, trigger pT 2-3, associated pT 2-3
-    hRatioDeltaRSmoothed[3][2][2]->SetBinContent(1, 0.18);
-    
-    // Centrality 50-90, trigger pT 3-4, associated pT 2-3
-    hRatioDeltaRSmoothed[3][3][2]->SetBinContent(1, 0.18);
-    
-    // Centrality 50-90, trigger pT 4-6, associated pT 4-6
-    hRatioDeltaRSmoothed[3][4][4]->SetBinContent(1, 0.16);
-    
-    // Centrality 50-90, trigger pT 6-8, associated pT 4-6
-    hRatioDeltaRSmoothed[3][5][4]->SetBinContent(1, 0.3);
-    
-    // Centrality 50-90, trigger pT 6-8, associated pT 6-8
-    hRatioDeltaRSmoothed[3][5][5]->SetBinContent(1, 0.18);
-    
-    // Centrality 50-90, trigger pT 8-12, associated pT 2-3
-    hRatioDeltaRSmoothed[3][6][2]->SetBinContent(1, 0.2);
-    
-    // Centrality 50-90, trigger pT 8-12, associated pT 3-4
-    hRatioDeltaRSmoothed[3][6][3]->SetBinContent(1, 0.2);
-    
-    // Centrality 50-90, trigger pT 8-12, associated pT 4-6
-    hRatioDeltaRSmoothed[3][6][4]->SetBinContent(1, 0.35);
-    
-    // Centrality 50-90, trigger pT 8-12, associated pT 6-8
-    hRatioDeltaRSmoothed[3][6][5]->SetBinContent(1, 0.25);
-    
-    // Centrality 50-90, trigger pT 12-16, associated pT 2-3
-    hRatioDeltaRSmoothed[3][7][2]->SetBinContent(1, 0.42);
-    
-    // Centrality 50-90, trigger pT 12-16, associated pT 8-12
-    hRatioDeltaRSmoothed[3][7][6]->SetBinContent(1, 0.48);
-    hRatioDeltaRSmoothed[3][7][6]->SetBinContent(2, 0.54);
-    hRatioDeltaRSmoothed[3][7][6]->SetBinContent(3, 0.6);
-    hRatioDeltaRSmoothed[3][7][6]->SetBinContent(4, 0.66);
-    
-    // Centrality 50-90, trigger pT 12-16, associated pT 12-16
-    hRatioDeltaRSmoothed[3][7][7]->SetBinContent(1, 0.45);
-    
-    // Centrality 50-90, trigger pT 16-20, associated pT 2-3
-    hRatioDeltaRSmoothed[3][8][2]->SetBinContent(1, 0.18);
-    
-    // Centrality 50-90, trigger pT 16-20, associated pT 4-6
-    hRatioDeltaRSmoothed[3][8][4]->SetBinContent(1, 0.34);
-    hRatioDeltaRSmoothed[3][8][4]->SetBinContent(2, 0.6);
-    hRatioDeltaRSmoothed[3][8][4]->SetBinContent(3, 0.63);
-    hRatioDeltaRSmoothed[3][8][4]->SetBinContent(4, 0.66);
-    hRatioDeltaRSmoothed[3][8][4]->SetBinContent(5, 0.68);
-    hRatioDeltaRSmoothed[3][8][4]->SetBinContent(6, 0.7);
-    
-    // Centrality 50-90, trigger pT 16-20, associated pT 6-8
-    hRatioDeltaRSmoothed[3][8][5]->SetBinContent(1, 0.38);
-    hRatioDeltaRSmoothed[3][8][5]->SetBinContent(2, 0.6);
-    hRatioDeltaRSmoothed[3][8][5]->SetBinContent(3, 0.63);
-    hRatioDeltaRSmoothed[3][8][5]->SetBinContent(4, 0.66);
-    
-    // Centrality 50-90, trigger pT 16-20, associated pT 8-12
-    hRatioDeltaRSmoothed[3][8][6]->SetBinContent(1, 0.28);
-    
-    // Centrality 50-90, trigger pT 16-20, associated pT 12-16
-    hRatioDeltaRSmoothed[3][8][7]->SetBinContent(1, 0.4);
-    
-    // Centrality 50-90, trigger pT 16-20, associated pT 16-20
-    hRatioDeltaRSmoothed[3][8][8]->SetBinContent(1, 0.4);
-    hRatioDeltaRSmoothed[3][8][8]->SetBinContent(2, 0.43);
-    hRatioDeltaRSmoothed[3][8][8]->SetBinContent(3, 0.46);
-    
-    // Centrality 50-90, trigger pT 20-300, associated pT 4-6
-    hRatioDeltaRSmoothed[3][9][4]->SetBinContent(1, 0.44);
-    hRatioDeltaRSmoothed[3][9][4]->SetBinContent(2, 0.63);
-    
-    // Centrality 50-90, trigger pT 20-300, associated pT 8-12
-    hRatioDeltaRSmoothed[3][9][6]->SetBinContent(1, 0.49);
-    hRatioDeltaRSmoothed[3][9][6]->SetBinContent(2, 0.64);
-    hRatioDeltaRSmoothed[3][9][6]->SetBinContent(3, 0.66);
-    hRatioDeltaRSmoothed[3][9][6]->SetBinContent(4, 0.68);
-    
-    // Centrality 50-90, trigger pT 20-300, associated pT 12-16
-    hRatioDeltaRSmoothed[3][9][7]->SetBinContent(1, 0.5);
-    hRatioDeltaRSmoothed[3][9][7]->SetBinContent(2, 0.58);
-    hRatioDeltaRSmoothed[3][9][7]->SetBinContent(3, 0.62);
-    hRatioDeltaRSmoothed[3][9][7]->SetBinContent(4, 0.65);
-    hRatioDeltaRSmoothed[3][9][7]->SetBinContent(5, 0.68);
-    hRatioDeltaRSmoothed[3][9][7]->SetBinContent(6, 0.7);
-    
-    // Centrality 50-90, trigger pT 20-300, associated pT 20-300
-    hRatioDeltaRSmoothed[3][9][9]->SetBinContent(1, 0.45);
-    hRatioDeltaRSmoothed[3][9][9]->SetBinContent(2, 0.5);
-    hRatioDeltaRSmoothed[3][9][9]->SetBinContent(3, 0.55);
-    hRatioDeltaRSmoothed[3][9][9]->SetBinContent(4, 0.6);
-    
-  }*/
   
   // ===============================================
   //        Draw the trigger turn-on curves
   // ===============================================
   
-  JDrawer *drawer = new JDrawer();
-  TLegend *legend;
+  JDrawer* drawer = new JDrawer();
+  TLegend* legend;
   //TLine *oneLine = new TLine(0,1,500,1);
   //oneLine->SetLineStyle(2);
   //oneLine->SetLineColor(kBlack);
@@ -565,6 +219,8 @@ void trackPairEfficiencyPlotter(){
   TString compactAssociatedPtString;
   TString averageEtaString;
   TString compactAverageEtaString;
+  TString jetPtString;
+  TString compactJetPtString;
   double legendY1;
   
   // Selection of colors and styles
@@ -884,7 +540,83 @@ void trackPairEfficiencyPlotter(){
         } // Associated particle pT loop
       } // Trigger particle pT loop
     } // Centrality loop
-  } // Draw the smoothed comparison
+  } // Draw the eta region comparison
+
+  // Draw the track pair efficiency histogram jet pT selection comparison
+  if(drawJetPtComparison){
+    for(int iCentrality = firstDrawnCentralityBin; iCentrality <= lastDrawnCentralityBin; iCentrality++){
+      
+      if(isPbPbData){
+        centralityString = Form("Centrality: %.0f-%.0f", systemCard->GetLowBinBorderCentrality(iCentrality), systemCard->GetHighBinBorderCentrality(iCentrality));
+        compactCentralityString = Form("_C%.0f-%.0f", systemCard->GetLowBinBorderCentrality(iCentrality), systemCard->GetHighBinBorderCentrality(iCentrality));
+      } else {
+        centralityString = "pp";
+        compactCentralityString = "_pp";
+      }
+      
+      for(int iTriggerPt = firstDrawnTriggerPtBin; iTriggerPt <= lastDrawnTriggerPtBin; iTriggerPt++){
+        
+        triggerPtString = Form("%.1f < p_{T,t} < %.1f GeV", systemCard->GetLowBinBorderTrackPairPt(iTriggerPt), systemCard->GetHighBinBorderTrackPairPt(iTriggerPt));
+        compactTriggerPtString = Form("_T%.0f-%.0f", systemCard->GetLowBinBorderTrackPairPt(iTriggerPt), systemCard->GetHighBinBorderTrackPairPt(iTriggerPt));
+        
+        for(int iAssociatedPt = firstDrawnAssociatedPtBin; iAssociatedPt <= iTriggerPt; iAssociatedPt++){
+          
+          associatedPtString = Form("%.1f < p_{T,a} < %.1f GeV", systemCard->GetLowBinBorderTrackPairPt(iAssociatedPt), systemCard->GetHighBinBorderTrackPairPt(iAssociatedPt));
+          compactAssociatedPtString = Form("_T%.0f-%.0f", systemCard->GetLowBinBorderTrackPairPt(iAssociatedPt), systemCard->GetHighBinBorderTrackPairPt(iAssociatedPt));
+          
+          legendY1 = 0.88 - 0.12 - (lastDrawnJetPtBin - firstDrawnJetPtBin + 1)*0.04;
+          
+          // Create a legend for the figure
+          legend = new TLegend(0.2,legendY1,0.5,0.88);
+          legend->SetFillStyle(0);legend->SetBorderSize(0);legend->SetTextSize(0.05);legend->SetTextFont(62);
+          
+          // Draw the first jet pT bin
+          hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][firstDrawnJetPtBin]->SetLineColor(color[0]);
+          hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][firstDrawnJetPtBin]->SetMarkerColor(color[0]);
+          hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][firstDrawnJetPtBin]->SetMarkerStyle(markerStyle[0]);
+          hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][firstDrawnJetPtBin]->GetYaxis()->SetRangeUser(0,2);
+          hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][firstDrawnJetPtBin]->GetXaxis()->SetRangeUser(0.006,0.4);
+          drawer->DrawHistogram(hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][firstDrawnJetPtBin], "#DeltaR", "Track pair efficiency", " ");
+          
+          // Draw the other jet pT bins to the same figure
+          for(int iJetPt = firstDrawnJetPtBin+1; iJetPt <= lastDrawnJetPtBin; iJetPt++){
+            hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->SetLineColor(color[iJetPt-firstDrawnJetPtBin]);
+            hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->SetMarkerColor(color[iJetPt-firstDrawnJetPtBin]);
+            hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->SetMarkerStyle(markerStyle[iJetPt-firstDrawnJetPtBin]);
+            hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->Draw("same");
+          }
+          
+          
+          // Add information to legend
+          legend->AddEntry((TObject*)0, centralityString.Data(), "");
+          legend->AddEntry((TObject*)0, triggerPtString.Data(), "");
+          legend->AddEntry((TObject*)0, associatedPtString.Data(), "");
+          
+          for(int iJetPt = firstDrawnJetPtBin; iJetPt <= lastDrawnJetPtBin; iJetPt++){
+            if(iJetPt < nJetPtBins){
+                jetPtString = Form("%.0f < jet p_{T} < %.0f", systemCard->GetLowBinBorderJetPt(iJetPt), systemCard->GetHighBinBorderJetPt(iJetPt));
+            } else {
+              jetPtString = Form("%.0f < jet p_{T} < %.1f", systemCard->GetLowBinBorderJetPt(0), systemCard->GetHighBinBorderJetPt(nJetPtBins-1));
+            }
+            legend->AddEntry(hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][iJetPt], jetPtString.Data(), "p");
+          }
+          
+          // Draw the legend
+          legend->Draw();
+          
+          // Draw a lines to one and 120 GeV
+          //oneLine->Draw("same");
+          //oneTwentyLine->Draw("same");
+          
+          // Save the figures to a file
+          if(saveFigures){
+            gPad->GetCanvas()->SaveAs(Form("figures/trackPairEfficiencyJetPtComparison%s%s%s%s.%s", saveComment, compactCentralityString.Data(), compactTriggerPtString.Data(), compactAssociatedPtString.Data(), figureFormat));
+          }
+          
+        } // Associated particle pT loop
+      } // Trigger particle pT loop
+    } // Centrality loop
+  } // Draw the eta region comparison
   
   // Option to write the smoothed histograms to a file to be used as correction
   if(writeSmoothedHistograms){

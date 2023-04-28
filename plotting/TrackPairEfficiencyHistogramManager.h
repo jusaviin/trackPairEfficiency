@@ -110,8 +110,9 @@ public:
   double GetAverageEtaBinBorder(const int iAverageEta) const;  // Getter for i:th average eta bin border in track pair histograms
   
   // Getters for histogram and axis naming
-  const char* GetJetHistogramName() const; // Getter for the jet histogram name
-  const char* GetJetAxisName() const;      // Getter for name suitable for x-axis in a jet histogram
+  const char* GetJetHistogramName() const;            // Getter for the jet histogram name
+  const char* GetJetAxisName() const;                 // Getter for name suitable for x-axis in a jet histogram
+  const char* GetDataLevelName(const int iDataLevel) const; // Getter for the data level name
   
   TString GetSystem() const;  // Getter for collision system
   

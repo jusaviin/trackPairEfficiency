@@ -1629,6 +1629,12 @@ const char* TrackPairEfficiencyHistogramManager::GetJetAxisName() const{
   return fJetAxisName;
 }
 
+// Getter for the name of data level
+const char* TrackPairEfficiencyHistogramManager::GetDataLevelName(const int iDataLevel) const{
+  if(iDataLevel < 0 || iDataLevel >= TrackPairEfficiencyHistograms::knDataLevels) return "Unknown";
+  return fDataLevelName[iDataLevel];
+}
+
 // Getter for collision system
 TString TrackPairEfficiencyHistogramManager::GetSystem() const{
   return fCard->GetDataType();
