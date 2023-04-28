@@ -26,11 +26,14 @@ TrackPairEfficiencyHistogramManager::TrackPairEfficiencyHistogramManager() :
   fLastLoadedTrackPtBin(1),
   fFirstLoadedTrackPairPtBin(0),
   fLastLoadedTrackPairPtBin(1),
+  fFirstLoadedJetPtBin(0),
+  fLastLoadedJetPtBin(1),
   fFirstLoadedAverageEtaBin(0),
   fLastLoadedAverageEtaBin(1),
   fnCentralityBins(kMaxCentralityBins),
   fnTrackPtBins(kMaxTrackPtBins),
   fnTrackPairPtBins(kMaxTrackPtBins),
+  fnJetPtBins(kMaxJetPtBinsEEC),
   fnAverageEtaBins(kMaxAverageEtaBins)
 {
   
@@ -42,6 +45,7 @@ TrackPairEfficiencyHistogramManager::TrackPairEfficiencyHistogramManager() :
   // Do not load track pairs by default
   for(int iDataType = 0; iDataType < TrackPairEfficiencyHistograms::knDataLevels; iDataType++){
     fLoadTrackPairs[iDataType] = false;
+    fLoadTrackPairsCloseToJets[iDataType] = false;
   }
   
   // Default binning for centrality
@@ -56,6 +60,12 @@ TrackPairEfficiencyHistogramManager::TrackPairEfficiencyHistogramManager() :
     fTrackPtBinBorders[iTrackPt] = 0;
     fTrackPairPtBinIndices[iTrackPt] = iTrackPt + 1;
     fTrackPairPtBinBorders[iTrackPt] = 0;
+  }
+
+  // Default binning for jet pT
+  for(int iJetPt = 0; iJetPt < kMaxJetPtBinsEEC + 1; iJetPt++){
+    fJetPtBinIndices[iJetPt] = iJetPt + 1;
+    fJetPtBinBorders[iJetPt] = 0;
   }
   
   // Default binning for average pair eta
@@ -110,6 +120,19 @@ TrackPairEfficiencyHistogramManager::TrackPairEfficiencyHistogramManager() :
         } // Associated pT loop
       } // Trigger pT loop
     } // Data level loop
+
+    // Track pair histograms close to jets
+    for(int iDataLevelJets = 0; iDataLevelJets < TrackPairEfficiencyHistograms::knDataLevels; iDataLevelJets++){
+      for(int iDataLevelTracks = 0; iDataLevelTracks < TrackPairEfficiencyHistograms::knDataLevels; iDataLevelTracks++){
+        for(int iTriggerPt = 0; iTriggerPt < kMaxTrackPtBins + 1; iTriggerPt++){
+          for(int iAssociatedPt = 0; iAssociatedPt < kMaxTrackPtBins + 1; iAssociatedPt++){
+            for(int iJetPt = 0; iJetPt < kMaxJetPtBinsEEC+1; iJetPt++){
+              fhTrackPairDeltaRCloseToJets[iDataLevelJets][iDataLevelTracks][iCentrality][iTriggerPt][iAssociatedPt][iJetPt] = NULL;
+            } // Jet pT loop
+          } // Associated pT loop
+        } // Trigger pT loop
+      } // Data level loop for tracks
+    } // Data level loop for jets
     
   } // Centrality loop
 }
@@ -162,6 +185,7 @@ void TrackPairEfficiencyHistogramManager::InitializeFromCard(){
   fnCentralityBins = fCard->GetNCentralityBins();
   fnTrackPtBins = fCard->GetNTrackPtBins();
   fnTrackPairPtBins = fCard->GetNTrackPairPtBins();
+  fnJetPtBins = fCard->GetNJetPtBins();
   fnAverageEtaBins = fCard->GetNAverageEtaBins();
   
   // Centrality binning
@@ -182,6 +206,12 @@ void TrackPairEfficiencyHistogramManager::InitializeFromCard(){
   }
   fLastLoadedTrackPairPtBin = fnTrackPairPtBins-1;
   
+  // Jet pT binning
+  for(int iJetPt = 0; iJetPt <= fnJetPtBins; iJetPt++){
+    fJetPtBinBorders[iJetPt] = fCard->GetLowBinBorderJetPt(iJetPt);
+  }
+  fLastLoadedJetPtBin = fnJetPtBins-1;
+
   // Average pair eta binning
   for(int iAverageEta = 0; iAverageEta <= fnAverageEtaBins; iAverageEta++){
     fAverageEtaBinBorders[iAverageEta] = fCard->GetLowBinBorderAverageEta(iAverageEta);
@@ -211,10 +241,12 @@ TrackPairEfficiencyHistogramManager::TrackPairEfficiencyHistogramManager(const T
   fLastLoadedCentralityBin(in.fLastLoadedCentralityBin),
   fFirstLoadedTrackPtBin(in.fFirstLoadedTrackPtBin),
   fLastLoadedTrackPtBin(in.fLastLoadedTrackPtBin),
-  fFirstLoadedTrackPairPtBin(0),
-  fLastLoadedTrackPairPtBin(1),
-  fFirstLoadedAverageEtaBin(0),
-  fLastLoadedAverageEtaBin(1),
+  fFirstLoadedTrackPairPtBin(in.fFirstLoadedTrackPairPtBin),
+  fLastLoadedTrackPairPtBin(in.fLastLoadedTrackPairPtBin),
+  fFirstLoadedJetPtBin(in.fFirstLoadedJetPtBin),
+  fLastLoadedJetPtBin(in.fLastLoadedJetPtBin),
+  fFirstLoadedAverageEtaBin(in.fFirstLoadedAverageEtaBin),
+  fLastLoadedAverageEtaBin(in.fLastLoadedAverageEtaBin),
   fhVertexZ(in.fhVertexZ),
   fhVertexZWeighted(in.fhVertexZWeighted),
   fhEvents(in.fhEvents),
@@ -231,6 +263,7 @@ TrackPairEfficiencyHistogramManager::TrackPairEfficiencyHistogramManager(const T
   // Do not load track pairs by default
   for(int iDataType = 0; iDataType < TrackPairEfficiencyHistograms::knDataLevels; iDataType++){
     fLoadTrackPairs[iDataType] = in.fLoadTrackPairs[iDataType];
+    fLoadTrackPairsCloseToJets[iDataType] = in.fLoadTrackPairsCloseToJets[iDataType];
   }
   
   // Copy binning for centrality
@@ -245,6 +278,12 @@ TrackPairEfficiencyHistogramManager::TrackPairEfficiencyHistogramManager(const T
     fTrackPtBinBorders[iTrackPt] = in.fTrackPtBinBorders[iTrackPt];
     fTrackPairPtBinIndices[iTrackPt] = in.fTrackPairPtBinIndices[iTrackPt];
     fTrackPairPtBinBorders[iTrackPt] = in.fTrackPairPtBinBorders[iTrackPt];
+  }
+
+  // Copy binning for jet pT
+  for(int iJetPt = 0; iJetPt < kMaxJetPtBinsEEC + 1; iJetPt++){
+    fJetPtBinIndices[iJetPt] = in.fJetPtBinIndices[iJetPt];
+    fJetPtBinBorders[iJetPt] = in.fJetPtBinBorders[iJetPt];
   }
   
   // Copy binning for average pair eta
@@ -288,6 +327,19 @@ TrackPairEfficiencyHistogramManager::TrackPairEfficiencyHistogramManager(const T
         } // Associated pT loop
       } // Trigger pT loop
     } // Data level loop
+
+    // Track pair histograms close to jets
+    for(int iDataLevelJets = 0; iDataLevelJets < TrackPairEfficiencyHistograms::knDataLevels; iDataLevelJets++){
+      for(int iDataLevelTracks = 0; iDataLevelTracks < TrackPairEfficiencyHistograms::knDataLevels; iDataLevelTracks++){
+        for(int iTriggerPt = 0; iTriggerPt < kMaxTrackPtBins + 1; iTriggerPt++){
+          for(int iAssociatedPt = 0; iAssociatedPt < kMaxTrackPtBins + 1; iAssociatedPt++){
+            for(int iJetPt = 0; iJetPt < kMaxJetPtBinsEEC+1; iJetPt++){
+              fhTrackPairDeltaRCloseToJets[iDataLevelJets][iDataLevelTracks][iCentrality][iTriggerPt][iAssociatedPt][iJetPt] = in.fhTrackPairDeltaRCloseToJets[iDataLevelJets][iDataLevelTracks][iCentrality][iTriggerPt][iAssociatedPt][iJetPt];
+            } // Jet pT loop
+          } // Associated pT loop
+        } // Trigger pT loop
+      } // Data level loop for tracks
+    } // Data level loop for jets
     
   } // Centrality loop
 }
@@ -327,6 +379,9 @@ void TrackPairEfficiencyHistogramManager::LoadHistograms(){
   
   // Load track pair histograms
   LoadTrackPairHistograms();
+
+  // Load track pair histograms close to jets
+  LoadTrackPairHistogramsCloseToJets();
   
 }
 
@@ -465,9 +520,9 @@ void TrackPairEfficiencyHistogramManager::LoadTrackHistograms(){
 }
 
 /*
- * Loader for track histograms
+ * Loader for track pair histograms
  *
- * THnSparse for tracks:
+ * THnSparse for track pairs:
  *
  *   Histogram name: trackPairs/genParticlePairs
  *
@@ -499,7 +554,7 @@ void TrackPairEfficiencyHistogramManager::LoadTrackPairHistograms(){
   int lowerAverageEtaBin = 0;
   int higherAverageEtaBin = 0;
   
-  // Loop over all track histograms
+  // Loop over all track pair histograms
   for(int iDataLevel = 0; iDataLevel < TrackPairEfficiencyHistograms::knDataLevels; iDataLevel++){
     if(!fLoadTrackPairs[iDataLevel]) continue;  // Only load the selected track pair types
     
@@ -559,6 +614,109 @@ void TrackPairEfficiencyHistogramManager::LoadTrackPairHistograms(){
       } // Trigger pT loop
     } // Centrality loop
   } // Data level loop
+}
+
+/*
+ * Loader for track pair histograms with jet pT binning
+ *
+ * THnSparse for track pairs:
+ *
+ *   Histogram name: trackPairsCloseToJet/genParticlePairsCloseToJet
+ *
+ *     Axis index              Content of axis
+ * --------------------------------------------------------
+ *       Axis 0            DeltaR between particles
+ *       Axis 1               Trigger particle pT
+ *       Axis 2             Associated particle pT
+ *       Axis 3                     Jet pT
+ *       Axis 4        Reconstructed / generator level jet
+ *       Axis 5                   Centrality
+ */
+void TrackPairEfficiencyHistogramManager::LoadTrackPairHistogramsCloseToJets(){
+  
+  // Define arrays to help find the histograms
+  int axisIndices[5] = {0};
+  int lowLimits[5] = {0};
+  int highLimits[5] = {0};
+  int nProjectionAxes = 4;
+  
+  // Define helper variables
+  int duplicateRemover = -1;
+  int lowerCentralityBin = 0;
+  int higherCentralityBin = 0;
+  int lowerTriggerPtBin = 0;
+  int higherTriggerPtBin = 0;
+  int lowerAssociatedPtBin = 0;
+  int higherAssociatedPtBin = 0;
+  int lowerJetPtBin = 0;
+  int higherJetPtBin = 0;
+
+  // Loop over all track pair histograms close to jets
+  for(int iDataLevelTracks = 0; iDataLevelTracks < TrackPairEfficiencyHistograms::knDataLevels; iDataLevelTracks++){
+    if(!fLoadTrackPairsCloseToJets[iDataLevelTracks]) continue;  // Only load the selected track pair types
+
+    // Find the histogram array from which the projections are made
+    THnSparseD *histogramArray = (THnSparseD *)fInputFile->Get(fTrackPairHistogramCloseToJetNames[iDataLevelTracks]);
+
+    // Loop over data level for jets close to which the tracks are paired
+    for(int iDataLevelJets = 0; iDataLevelJets < TrackPairEfficiencyHistograms::knDataLevels; iDataLevelJets++){
+
+      // Setup the jet data level axis restrictions
+      axisIndices[0] = 4; lowLimits[0] = iDataLevelJets+1; highLimits[0] = iDataLevelJets+1;
+
+      // Centrality loop
+      for(int iCentrality = fFirstLoadedCentralityBin; iCentrality <= fLastLoadedCentralityBin; iCentrality++){
+
+        // Select the bin indices
+        lowerCentralityBin = fCentralityBinIndices[iCentrality];
+        higherCentralityBin = fCentralityBinIndices[iCentrality+1] + duplicateRemover;
+
+        // Setup axes with restrictions, (5 = centrality)
+        axisIndices[1] = 5; lowLimits[1] = lowerCentralityBin; highLimits[1] = higherCentralityBin;
+
+        // Trigger pT loop
+        for(int iTriggerPt = fFirstLoadedTrackPairPtBin; iTriggerPt <= fLastLoadedTrackPairPtBin; iTriggerPt++){
+
+          // Select the bin indices for track pT
+          lowerTriggerPtBin = fTrackPairPtBinIndices[iTriggerPt];
+          higherTriggerPtBin = fTrackPairPtBinIndices[iTriggerPt+1] + duplicateRemover;
+
+          // Add restriction for trigger pT axis (1)
+          axisIndices[2] = 1; lowLimits[2] = lowerTriggerPtBin; highLimits[2] = higherTriggerPtBin;
+
+          // Associated pT loop
+          for(int iAssociatedPt = fFirstLoadedTrackPairPtBin; iAssociatedPt <= iTriggerPt; iAssociatedPt++){
+
+            // Select the bin indices for track pT
+            lowerAssociatedPtBin = fTrackPairPtBinIndices[iAssociatedPt];
+            higherAssociatedPtBin = fTrackPairPtBinIndices[iAssociatedPt+1] + duplicateRemover;
+
+            // Add restriction for associated pT axis (2)
+            axisIndices[3] = 2; lowLimits[3] = lowerAssociatedPtBin; highLimits[3] = higherAssociatedPtBin;
+
+            for(int iJetPt = fFirstLoadedJetPtBin; iJetPt <= fLastLoadedJetPtBin; iJetPt++) {
+
+              // Add a new projection axis if we are not averaging over all jet pT:s
+              if(iJetPt < fnJetPtBins) {
+                nProjectionAxes = 5;
+                lowerJetPtBin = fJetPtBinIndices[iJetPt];
+                higherJetPtBin = fJetPtBinIndices[iJetPt+1] + duplicateRemover;
+                axisIndices[4] = 3; lowLimits[4] = lowerJetPtBin; highLimits[4] = higherJetPtBin;
+              } else {
+                // If we do not care about the jet pT, reset the range in the jet pT axis of the histogram
+                nProjectionAxes = 4;
+                histogramArray->GetAxis(3)->SetRange(0,0);
+              }
+
+              // Read the deltaR distribution histograms
+              fhTrackPairDeltaRCloseToJets[iDataLevelJets][iDataLevelTracks][iCentrality][iTriggerPt][iAssociatedPt][iJetPt] = FindHistogram(histogramArray, 0, nProjectionAxes, axisIndices, lowLimits, highLimits);
+            }
+
+          } // Associated pT loop
+        } // Trigger pT loop
+      } // Centrality loop
+    } // Jet data level loop
+  } // Track data level loop
 }
 
 /*
@@ -813,6 +971,9 @@ void TrackPairEfficiencyHistogramManager::Write(const char* fileName, const char
   
   // Write the track pair histograms to the output file
   WriteTrackPairHistograms();
+
+  // Write the track pair histograms close to jets to the output file
+  WriteTrackPairHistogramsCloseToJets();
   
   // Write the card to the output file if it is not already written
   if(!gDirectory->GetDirectory("JCard")) fCard->Write(outputFile);
@@ -983,6 +1144,58 @@ void TrackPairEfficiencyHistogramManager::WriteTrackPairHistograms(){
 
 }
 
+/*
+ * Write the track pair histograms close to jets to the file that is currently open
+ */
+void TrackPairEfficiencyHistogramManager::WriteTrackPairHistogramsCloseToJets(){
+  
+  // Helper variable for histogram naming
+  TString histogramNamer;
+  
+  // Write the track histograms to the output file
+  for(int iDataLevelTracks = 0; iDataLevelTracks < TrackPairEfficiencyHistograms::knDataLevels; iDataLevelTracks++){
+    if(!fLoadTrackPairsCloseToJets[iDataLevelTracks]) continue;  // Only write the loaded track pair types
+    
+    // Create a directory for the histograms if it does not already exist
+    if(!gDirectory->GetDirectory(fTrackPairHistogramCloseToJetNames[iDataLevelTracks])) gDirectory->mkdir(fTrackPairHistogramCloseToJetNames[iDataLevelTracks]);
+    gDirectory->cd(fTrackPairHistogramCloseToJetNames[iDataLevelTracks]);
+
+    // Loop over jet data level (reconstructed / generator level)
+    for(int iDataLevelJets = 0; iDataLevelJets < TrackPairEfficiencyHistograms::knDataLevels; iDataLevelJets++){
+    
+      // Centrality loop
+      for(int iCentrality = fFirstLoadedCentralityBin; iCentrality <= fLastLoadedCentralityBin; iCentrality++){
+      
+        // Trigger pT loop
+        for(int iTriggerPt = fFirstLoadedTrackPairPtBin; iTriggerPt <= fLastLoadedTrackPairPtBin; iTriggerPt++){
+        
+          // Associated pT loop
+          for(int iAssociatedPt = fFirstLoadedTrackPairPtBin; iAssociatedPt <= iTriggerPt; iAssociatedPt++){
+          
+            // DeltaR histograms in average pair eta bins
+            for(int iJetPt = fFirstLoadedJetPtBin; iJetPt <= fLastLoadedJetPtBin; iJetPt++){
+            
+              if(iJetPt == fnJetPtBins){
+                // DeltaR histograms without jet pT selection
+                histogramNamer = Form("%sDeltaRCloseTo%sJets_C%dT%dA%d", fTrackPairHistogramNames[iDataLevelTracks], fDataLevelName[iDataLevelJets], iCentrality, iTriggerPt, iAssociatedPt);
+              } else {
+                // DeltaR histograms in jet pT bins
+                histogramNamer = Form("%sDeltaRCloseTo%sJets_C%dT%dA%dJ%d", fTrackPairHistogramNames[iDataLevelTracks], fDataLevelName[iDataLevelJets], iCentrality, iTriggerPt, iAssociatedPt, iJetPt);
+              }
+              fhTrackPairDeltaRCloseToJets[iDataLevelJets][iDataLevelTracks][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->Write(histogramNamer.Data(), TObject::kOverwrite);
+            }
+          
+          } // Associated pT loop
+        } // Trigger pT loop
+      } // Centrality loop
+    } // Data level for jets loop
+    
+    // Return back to main directory
+    gDirectory->cd("../");
+    
+  } // Data level loop
+
+}
 
 /*
  * Load the selected histograms from a file containing readily processed histograms
@@ -1091,6 +1304,28 @@ void TrackPairEfficiencyHistogramManager::LoadProcessedHistograms(){
       } // Trigger pT loop
     } // Centrality loop
   } // Data level loop
+
+  // Load the track pair histograms close to jets from the input file
+  for(int iDataLevelTracks = 0; iDataLevelTracks < TrackPairEfficiencyHistograms::knDataLevels; iDataLevelTracks++){
+    if(!fLoadTrackPairsCloseToJets[iDataLevelTracks]) continue;  // Only load the selected track pair types
+    for(int iDataLevelJets = 0; iDataLevelJets < TrackPairEfficiencyHistograms::knDataLevels; iDataLevelJets++){
+      for(int iCentrality = fFirstLoadedCentralityBin; iCentrality <= fLastLoadedCentralityBin; iCentrality++){
+        for(int iTriggerPt = fFirstLoadedTrackPairPtBin; iTriggerPt <= fLastLoadedTrackPairPtBin; iTriggerPt++){
+          for(int iAssociatedPt = fFirstLoadedTrackPairPtBin; iAssociatedPt <= iTriggerPt; iAssociatedPt++){
+            for(int iJetPt = fFirstLoadedJetPtBin; iJetPt <= fLastLoadedJetPtBin; iJetPt++){
+              // DeltaR histograms without eta or phi selection
+              if(iJetPt == fnJetPtBins){
+                histogramNamer = Form("%s/%sDeltaRCloseTo%sJets_C%dT%dA%d", fTrackPairHistogramCloseToJetNames[iDataLevelTracks], fTrackPairHistogramNames[iDataLevelTracks], fDataLevelName[iDataLevelJets], iCentrality, iTriggerPt, iAssociatedPt);
+              } else {
+                histogramNamer = Form("%s/%sDeltaRCloseTo%sJets_C%dT%dA%dJ%d", fTrackPairHistogramCloseToJetNames[iDataLevelTracks], fTrackPairHistogramNames[iDataLevelTracks], fDataLevelName[iDataLevelJets], iCentrality, iTriggerPt, iAssociatedPt, iJetPt);
+              }
+              fhTrackPairDeltaRCloseToJets[iDataLevelJets][iDataLevelTracks][iCentrality][iTriggerPt][iAssociatedPt][iJetPt] = (TH1D*) fInputFile->Get(histogramNamer.Data());
+            } // Average pair eta loop
+          } // Associated pT loop
+        } // Trigger pT loop
+      } // Centrality loop
+    } // Data level loop for jets
+  } // Data level loop for tracks
 }
 
 /*
@@ -1204,6 +1439,20 @@ void TrackPairEfficiencyHistogramManager::SetTrackPairPtBins(const bool readBins
 }
 
 /*
+ * Set up jet pT bin borders and indices according to provided bin borders
+ *
+ *  const bool readBinsFromFile = True: Disregard given bins ans use the ones in fCard. False: Use given bins
+ *  const int nBins = Number of given track pT bins
+ *  const double *binBorders = New bin borders for track pT
+ *  const bool setIndices = Set the bin indices in THnSparse
+ */
+void TrackPairEfficiencyHistogramManager::SetJetPtBins(const bool readBinsFromFile, const int nBins, const double *binBorders, const bool setIndices){
+  
+  SetGenericBins(readBinsFromFile, "trackPairsCloseToJet", 3, fnJetPtBins, fJetPtBinBorders, fJetPtBinIndices, nBins, binBorders, "track pT", kMaxJetPtBinsEEC, setIndices);
+  
+}
+
+/*
  * Set up track pT bin borders and indices according to provided bin borders for track pair histograms
  *
  *  const bool readBinsFromFile = True: Disregard given bins ans use the ones in fCard. False: Use given bins
@@ -1242,6 +1491,13 @@ void TrackPairEfficiencyHistogramManager::SetLoadGenParticles(const bool loadOrN
   fLoadTracks[kGenParticle] = loadOrNot;
 }
 
+// Setter for loading all track histograms
+void TrackPairEfficiencyHistogramManager::SetLoadAllTracks(const bool loadTracks, const bool loadUncorrected, const bool loadGenParticles){
+  SetLoadTracks(loadTracks);
+  SetLoadTracksUncorrected(loadUncorrected);
+  SetLoadGenParticles(loadGenParticles);
+}
+
 // Setter for loading track pairs
 void TrackPairEfficiencyHistogramManager::SetLoadTrackPairs(const bool loadOrNot){
   fLoadTrackPairs[TrackPairEfficiencyHistograms::kReconstructed] = loadOrNot;
@@ -1258,11 +1514,20 @@ void TrackPairEfficiencyHistogramManager::SetLoadAllTrackPairs(const bool loadTr
   SetLoadGenParticlePairs(loadGenParticles);
 }
 
-// Setter for loading all track histograms
-void TrackPairEfficiencyHistogramManager::SetLoadAllTracks(const bool loadTracks, const bool loadUncorrected, const bool loadGenParticles){
-  SetLoadTracks(loadTracks);
-  SetLoadTracksUncorrected(loadUncorrected);
-  SetLoadGenParticles(loadGenParticles);
+// Setter for loading track pairs close to jets
+void TrackPairEfficiencyHistogramManager::SetLoadTrackPairsCloseToJets(const bool loadOrNot){
+  fLoadTrackPairsCloseToJets[TrackPairEfficiencyHistograms::kReconstructed] = loadOrNot;
+}
+
+// Setter for loading generator level particle pairs close to jets
+void TrackPairEfficiencyHistogramManager::SetLoadGenParticlePairsCloseToJets(const bool loadOrNot){
+  fLoadTrackPairsCloseToJets[TrackPairEfficiencyHistograms::kGeneratorLevel] = loadOrNot;
+}
+
+// Setter for loading all track pair histograms close to jets
+void TrackPairEfficiencyHistogramManager::SetLoadAllTrackPairsCloseToJets(const bool loadTracks, const bool loadGenParticles){
+  SetLoadTrackPairsCloseToJets(loadTracks);
+  SetLoadGenParticlePairsCloseToJets(loadGenParticles);
 }
 
  // Setter for loading two-dimensional histograms
@@ -1288,13 +1553,22 @@ void TrackPairEfficiencyHistogramManager::SetTrackPtBinRange(const int first, co
   BinSanityCheck(fnTrackPtBins,fFirstLoadedTrackPtBin,fLastLoadedTrackPtBin);
 }
 
-// Setter for loaded track pT bins
+// Setter for loaded track pair pT bins
 void TrackPairEfficiencyHistogramManager::SetTrackPairPtBinRange(const int first, const int last){
   fFirstLoadedTrackPairPtBin = first;
   fLastLoadedTrackPairPtBin = last;
   
   // Sanity check for track pT bins
   BinSanityCheck(fnTrackPairPtBins,fFirstLoadedTrackPairPtBin,fLastLoadedTrackPairPtBin);
+}
+
+// Setter for loaded jet pT bins
+void TrackPairEfficiencyHistogramManager::SetJetPtBinRange(const int first, const int last){
+  fFirstLoadedJetPtBin = first;
+  fLastLoadedJetPtBin = last;
+  
+  // Sanity check for track pT bins
+  BinSanityCheck(fnJetPtBins+1,fFirstLoadedJetPtBin,fLastLoadedJetPtBin);
 }
 
 // Setter for loaded average pair eta bins
@@ -1335,6 +1609,11 @@ int TrackPairEfficiencyHistogramManager::GetNTrackPairPtBins() const{
   return fnTrackPairPtBins;
 }
 
+// Getter for the number of jet pT bins
+int TrackPairEfficiencyHistogramManager::GetNJetPtBins() const{
+  return fnJetPtBins;
+}
+
 // Getter for the number of average eta bins in track pair histograms
 int TrackPairEfficiencyHistogramManager::GetNAverageEtaBins() const{
   return fnAverageEtaBins;
@@ -1368,6 +1647,11 @@ double TrackPairEfficiencyHistogramManager::GetTrackPtBinBorder(const int iTrack
 // Getter for i:th track pT bin border in track pair histograms
 double TrackPairEfficiencyHistogramManager::GetTrackPairPtBinBorder(const int iTrackPt) const{
   return fTrackPairPtBinBorders[iTrackPt];
+}
+
+// Getter for i:th jet pT bin border
+double TrackPairEfficiencyHistogramManager::GetJetPtBinBorder(const int iJetPt) const{
+  return fJetPtBinBorders[iJetPt];
 }
 
 // Getter for i:th average eta bin border in track pair histograms
@@ -1455,6 +1739,11 @@ TH2D* TrackPairEfficiencyHistogramManager::GetHistogramTrackEtaPhi(const int iTr
 // Getter for DeltaR between tracks in pT and centrality bins
 TH1D* TrackPairEfficiencyHistogramManager::GetHistogramTrackPairDeltaR(const int iCentrality, const int iTriggerPt, const int iAssociatedPt, const int iAverageEta, const int iDataLevel) const{
   return fhTrackPairDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta][iDataLevel];
+}
+
+// Getter for DeltaR between tracks close to jets in pT and centrality bins
+TH1D* TrackPairEfficiencyHistogramManager::GetHistogramTrackPairDeltaRCloseToJets(const int iDataLevelJets, const int iDataLevelTracks, const int iCentrality, const int iTriggerPt, const int iAssociatedPt, const int iJetPt) const{
+  return fhTrackPairDeltaRCloseToJets[iDataLevelJets][iDataLevelTracks][iCentrality][iTriggerPt][iAssociatedPt][iJetPt];
 }
 
 // The rest

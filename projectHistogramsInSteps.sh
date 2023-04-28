@@ -35,5 +35,11 @@ root -l -b -q 'plotting/projectTrackPairEfficiencyHistograms.C("'${INPUT}'","'${
 # Project the generator level particle pair histograms
 root -l -b -q 'plotting/projectTrackPairEfficiencyHistograms.C("'${INPUT}'","'${OUTPUT}'",64)'
 
+# Project the track pair close to jet histograms
+root -l -b -q 'plotting/projectTrackPairEfficiencyHistograms.C("'${INPUT}'","'${OUTPUT}'",128)'
+
+# Project the generator level particle pair close to jet histograms
+root -l -b -q 'plotting/projectTrackPairEfficiencyHistograms.C("'${INPUT}'","'${OUTPUT}'",256)'
+
 # Put the placeholder string back to the histogram projection file
 sed -i '' 's/'${GITHASH}'/GITHASHHERE/' plotting/projectTrackPairEfficiencyHistograms.C

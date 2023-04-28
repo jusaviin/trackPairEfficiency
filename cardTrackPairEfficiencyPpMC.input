@@ -37,6 +37,7 @@ HighPtHatCut 1000   # Maximum accepted pT hat
 CentralityBinEdges -0.75 -0.25 9.75 29.75 49.75 89.75  # Centrality binning
 TrackPtBinEdges     0.7 1 2 3 4 6 8 300          # Track pT binning
 TrackPairPtBinEdges 0.7 1 2 3 4 6 8 12 16 20 300 # Track pT binning for track pair histogram
+JetPtBinEdgesEEC    120 140 160 180 200 300 500 5020 # Jet pT bin edges for EEC
 PtHatBinEdges       0 30 50 80 120 170 220 280 370 460  # pT hat binning
 
 # Debug

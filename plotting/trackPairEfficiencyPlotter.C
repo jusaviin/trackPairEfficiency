@@ -9,9 +9,9 @@
 void trackPairEfficiencyPlotter(){
   
   // File containing the track pair distributions used to determine the track pair efficiency
-  TString fileName = "data/trackPairEfficiency_triggerFiducialCut_newBins_processed_2023-04-10.root";
+  TString fileName = "data/trackPairEfficiency_triggerFiducialCut_newBins_fixedCentrality_processed_2023-04-10.root";
   // trackPairEfficiencyPp_triggerEta1p6_newBins_processed_2023-04-10.root
-  // trackPairEfficiency_triggerFiducialCut_newBins_2023-04-10.root
+  // trackPairEfficiency_triggerFiducialCut_newBins_fixedCentrality_processed_2023-04-10.root
   
   // Open the file and check that it exists
   TFile* inputFile = TFile::Open(fileName);
@@ -888,7 +888,7 @@ void trackPairEfficiencyPlotter(){
   
   // Option to write the smoothed histograms to a file to be used as correction
   if(writeSmoothedHistograms){
-    TFile* outputFile = TFile::Open("trackPairEfficiencyCorrectionTableNewBinning_PbPb2018_2023-04-13.root","RECREATE");
+    TFile* outputFile = TFile::Open("trackPairEfficiencyCorrectionTableNewBinning_PbPb2018_2023-04-17.root","RECREATE");
     
     for(int iCentrality = firstDrawnCentralityBin; iCentrality <= lastDrawnCentralityBin; iCentrality++){
       for(int iTriggerPt = firstDrawnTriggerPtBin; iTriggerPt <= lastDrawnTriggerPtBin; iTriggerPt++){

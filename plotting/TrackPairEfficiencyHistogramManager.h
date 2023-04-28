@@ -25,6 +25,7 @@ public:
   static const int kMaxCentralityBins = 5;       // Maximum allowed number of centrality bins
   static const int kMaxTrackPtBins = 15;         // Maximum allowed number of track pT bins
   static const int kMaxAverageEtaBins = 10;      // Maximum allowed number of average eta bins
+  static const int kMaxJetPtBinsEEC = 15;        // Maximum allowed number of jet pT bins for energy-energy correlators
   
   // Indices for different track histogram categories
   enum enumTrackHistograms{kTrack, kUncorrectedTrack, kGenParticle, knTrackCategories};
@@ -41,6 +42,7 @@ private:
   
   // Naming for track pair histograms
   const char* fTrackPairHistogramNames[TrackPairEfficiencyHistograms::knDataLevels] = {"trackPairs", "genParticlePairs"};
+  const char* fTrackPairHistogramCloseToJetNames[TrackPairEfficiencyHistograms::knDataLevels] = {"trackPairsCloseToJet", "genParticlePairsCloseToJet"};
   
   // Naming for data levels
   const char* fDataLevelName[TrackPairEfficiencyHistograms::knDataLevels] = {"", "GeneratorLevel"};
@@ -61,6 +63,7 @@ public:
   void SetCentralityBins(const bool readBinsFromFile, const int nBins, const double *binBorders, const bool setIndices = true); // Set up centrality bin indices according to provided bin borders
   void SetTrackPtBins(const bool readBinsFromFile, const int nBins, const double *binBorders, const bool setIndices = true);    // Set up track pT bin indices according to provided bin borders
   void SetTrackPairPtBins(const bool readBinsFromFile, const int nBins, const double *binBorders, const bool setIndices = true);    // Set up track pT bin indices for track pair histograms according to provided bin borders
+  void SetJetPtBins(const bool readBinsFromFile, const int nBins, const double *binBorders, const bool setIndices = true);    // Set up jet pT bin indices according to provided bin borders
   void SetAverageEtaBins(const bool readBinsFromFile, const int nBins, const double *binBorders, const bool setIndices = true);    // Set up average pair eta bin indices for track pair histograms according to provided bin borders
   
   // Setters for event information and dijets
@@ -79,6 +82,10 @@ public:
   void SetLoadTrackPairs(const bool loadOrNot);        // Setter for loading track pairs
   void SetLoadGenParticlePairs(const bool loadOrNot);  // Setter for loading generator level particle pairs
   void SetLoadAllTrackPairs(const bool loadTracks, const bool loadGenParticles); // Setter for loading all track pair histograms
+
+  void SetLoadTrackPairsCloseToJets(const bool loadOrNot);        // Setter for loading track pairs close to jets
+  void SetLoadGenParticlePairsCloseToJets(const bool loadOrNot);  // Setter for loading generator level particle pairs close to jets
+  void SetLoadAllTrackPairsCloseToJets(const bool loadTracks, const bool loadGenParticles); // Setter for loading all track pair histograms close to jets
   
   // Setter for loading additional histograms
   void SetLoad2DHistograms(const bool loadOrNot);           // Setter for loading two-dimensional histograms
@@ -87,16 +94,19 @@ public:
   void SetCentralityBinRange(const int first, const int last);  // Setter for centrality bin range
   void SetTrackPtBinRange(const int first, const int last);     // Setter for track pT bin range
   void SetTrackPairPtBinRange(const int first, const int last); // Setter for track pT bin range for track pair histograms
+  void SetJetPtBinRange(const int first, const int last);       // Setter for jet pT bin range
   void SetAverageEtaBinRange(const int first, const int last);  // Setter for loaded average pair eta bins
   
   // Getters for number of bins in histograms
   int GetNCentralityBins() const;  // Getter for the number of centrality bins
   int GetNTrackPtBins() const;     // Getter for the number of track pT bins
   int GetNTrackPairPtBins() const; // Getter for the number of track pT bins in track pair histograms
+  int GetNJetPtBins() const;       // Getter for the number of jet pT bins
   int GetNAverageEtaBins() const;  // Getter for the number of average eta bins in track pair histograms
   double GetCentralityBinBorder(const int iCentrality) const;  // Getter for i:th centrality bin border
   double GetTrackPtBinBorder(const int iTrackPt) const;        // Getter for i:th track pT bin border
   double GetTrackPairPtBinBorder(const int iTrackPt) const;    // Getter for i:th track pT bin border in track pair histograms
+  double GetJetPtBinBorder(const int iJetPt) const;            // Getter for i:th jet pT bin border
   double GetAverageEtaBinBorder(const int iAverageEta) const;  // Getter for i:th average eta bin border in track pair histograms
   
   // Getters for histogram and axis naming
@@ -126,6 +136,7 @@ public:
   
   // Getters for track pair histograms
   TH1D* GetHistogramTrackPairDeltaR(const int iCentrality, const int iTriggerPt, const int iAssociatedPt, const int iAverageEta, const int iDataLevel) const; // Track pair DeltaR histograms
+  TH1D* GetHistogramTrackPairDeltaRCloseToJets(const int iDataLevelJets, const int iDataLevelTracks, const int iCentrality, const int iTriggerPt, const int iAssociatedPt, const int iJetPt) const; // Track pair DeltaR histograms close to jets
   
   // Getters for the loaded centrality bins
   int GetFirstCentralityBin() const;  // Get the first loaded centrality bin
@@ -151,11 +162,12 @@ private:
   // ======== Flags for histograms to load ========
   // ==============================================
   
-  bool fLoadEventInformation;                                        // Load the event information histograms
-  bool fLoadJets;                                                    // Load the jet histograms
-  bool fLoadTracks[knTrackCategories];                               // Load the track histograms
-  bool fLoadTrackPairs[TrackPairEfficiencyHistograms::knDataLevels]; // Load the track pair histograms
-  bool fLoad2DHistograms;                                            // Load also two-dimensional (eta,phi) histograms
+  bool fLoadEventInformation;                                                   // Load the event information histograms
+  bool fLoadJets;                                                               // Load the jet histograms
+  bool fLoadTracks[knTrackCategories];                                          // Load the track histograms
+  bool fLoadTrackPairs[TrackPairEfficiencyHistograms::knDataLevels];            // Load the track pair histograms
+  bool fLoadTrackPairsCloseToJets[TrackPairEfficiencyHistograms::knDataLevels]; // Load the track pair histograms
+  bool fLoad2DHistograms;                                                       // Load also two-dimensional (eta,phi) histograms
   
   // ==============================================
   // ======== Ranges of histograms to load ========
@@ -167,6 +179,8 @@ private:
   int fLastLoadedTrackPtBin;      // Last track pT bin that is loaded
   int fFirstLoadedTrackPairPtBin; // First track pair pT bin that is loaded
   int fLastLoadedTrackPairPtBin;  // Last track pair pT bin that is loaded
+  int fFirstLoadedJetPtBin;     // First jet pT bin that is loaded
+  int fLastLoadedJetPtBin;      // Last jet pT bin that is loaded
   int fFirstLoadedAverageEtaBin;  // First average pair eta bin that is loaded
   int fLastLoadedAverageEtaBin;   // Last average pair eta bin that is loaded
   
@@ -179,11 +193,14 @@ private:
   double fTrackPtBinBorders[kMaxTrackPtBins+1];       // Track pT bin borders, from which bin indices are obtained
   int fTrackPairPtBinIndices[kMaxTrackPtBins+1];      // Indices for track pT bins in track pair histograms
   double fTrackPairPtBinBorders[kMaxTrackPtBins+1];   // Track pT bin borders in track pair histograms, from which bin indices are obtained
+  int fJetPtBinIndices[kMaxJetPtBinsEEC+1];           // Indices for jet pT bins in jet pT binned track pair histograms
+  double fJetPtBinBorders[kMaxJetPtBinsEEC+1];        // Jet pT bin borders, from which bin indices are obtained
   int fAverageEtaBinIndices[kMaxAverageEtaBins+1];    // Indices for average pair eta bins in track pair histograms
   double fAverageEtaBinBorders[kMaxAverageEtaBins+1]; // Average eta bin borders for track pair histograms
   int fnCentralityBins;                               // Number of centrality bins in the JCard of the data file
   int fnTrackPtBins;                                  // Number of track pT bins in the JCard of the data file
   int fnTrackPairPtBins;                              // Number of track pT bins in track pair histograms in the JCard of the data file
+  int fnJetPtBins;                                    // Number of jet pT bins in the JCard of the data file
   int fnAverageEtaBins;                               // Number of average eta bins projected from the histograms
   
   // =============================================
@@ -191,30 +208,31 @@ private:
   // =============================================
   
   // Event information histograms
-  TH1D *fhVertexZ;               // Vertex z position
-  TH1D *fhVertexZWeighted;       // Weighted vertex z-position (only meaningfull for MC)
-  TH1D *fhEvents;                // Number of events surviving different event cuts
-  TH1D *fhCentrality;            // Centrality of all events
-  TH1D *fhCentralityWeighted;    // Weighted centrality distribution in all events (only meaningful for MC)
-  TH1D *fhPtHat;                 // pT hat for MC events (only meaningful for MC)
-  TH1D *fhPtHatWeighted;         // Weighted pT hat distribution (only meaningful for MC)
-  TH1D *fhTrackCuts;             // Number of tracks surviving different track cuts
-  TH1D *fhGenParticleSelections; // Number of generator level particles surviving different selections
+  TH1D* fhVertexZ;               // Vertex z position
+  TH1D* fhVertexZWeighted;       // Weighted vertex z-position (only meaningfull for MC)
+  TH1D* fhEvents;                // Number of events surviving different event cuts
+  TH1D* fhCentrality;            // Centrality of all events
+  TH1D* fhCentralityWeighted;    // Weighted centrality distribution in all events (only meaningful for MC)
+  TH1D* fhPtHat;                 // pT hat for MC events (only meaningful for MC)
+  TH1D* fhPtHatWeighted;         // Weighted pT hat distribution (only meaningful for MC)
+  TH1D* fhTrackCuts;             // Number of tracks surviving different track cuts
+  TH1D* fhGenParticleSelections; // Number of generator level particles surviving different selections
   
   // Histograms for inclusive jets
-  TH1D *fhJetPt[kMaxCentralityBins][TrackPairEfficiencyHistograms::knDataLevels];      // Jet pT histograms
-  TH1D *fhJetPhi[kMaxCentralityBins][TrackPairEfficiencyHistograms::knDataLevels];     // Jet phi histograms
-  TH1D *fhJetEta[kMaxCentralityBins][TrackPairEfficiencyHistograms::knDataLevels];     // Jet eta histograms
-  TH2D *fhJetEtaPhi[kMaxCentralityBins][TrackPairEfficiencyHistograms::knDataLevels];  // 2D eta-phi histogram for jets
+  TH1D* fhJetPt[kMaxCentralityBins][TrackPairEfficiencyHistograms::knDataLevels];      // Jet pT histograms
+  TH1D* fhJetPhi[kMaxCentralityBins][TrackPairEfficiencyHistograms::knDataLevels];     // Jet phi histograms
+  TH1D* fhJetEta[kMaxCentralityBins][TrackPairEfficiencyHistograms::knDataLevels];     // Jet eta histograms
+  TH2D* fhJetEtaPhi[kMaxCentralityBins][TrackPairEfficiencyHistograms::knDataLevels];  // 2D eta-phi histogram for jets
   
   // Histograms for tracks
-  TH1D *fhTrackPt[knTrackCategories][kMaxCentralityBins];                        // Track pT histograms
-  TH1D *fhTrackPhi[knTrackCategories][kMaxCentralityBins][kMaxTrackPtBins+1];    // Track phi histograms
-  TH1D *fhTrackEta[knTrackCategories][kMaxCentralityBins][kMaxTrackPtBins+1];    // Track eta histograms
-  TH2D *fhTrackEtaPhi[knTrackCategories][kMaxCentralityBins][kMaxTrackPtBins+1]; // 2D eta-phi histograms for tracks
+  TH1D* fhTrackPt[knTrackCategories][kMaxCentralityBins];                        // Track pT histograms
+  TH1D* fhTrackPhi[knTrackCategories][kMaxCentralityBins][kMaxTrackPtBins+1];    // Track phi histograms
+  TH1D* fhTrackEta[knTrackCategories][kMaxCentralityBins][kMaxTrackPtBins+1];    // Track eta histograms
+  TH2D* fhTrackEtaPhi[knTrackCategories][kMaxCentralityBins][kMaxTrackPtBins+1]; // 2D eta-phi histograms for tracks
   
   // Histograms for track pairs
-  TH1D *fhTrackPairDeltaR[kMaxCentralityBins][kMaxTrackPtBins+1][kMaxTrackPtBins+1][kMaxAverageEtaBins+1][TrackPairEfficiencyHistograms::knDataLevels];
+  TH1D* fhTrackPairDeltaR[kMaxCentralityBins][kMaxTrackPtBins+1][kMaxTrackPtBins+1][kMaxAverageEtaBins+1][TrackPairEfficiencyHistograms::knDataLevels];
+  TH1D* fhTrackPairDeltaRCloseToJets[TrackPairEfficiencyHistograms::knDataLevels][TrackPairEfficiencyHistograms::knDataLevels][kMaxCentralityBins][kMaxTrackPtBins+1][kMaxTrackPtBins+1][kMaxJetPtBinsEEC+1];
   
   // Private methods
   void InitializeFromCard(); // Initialize several member variables from TrackPairEfficiencyCard
@@ -235,6 +253,7 @@ private:
   void LoadJetHistograms();       // Loader for jet histograms
   void LoadTrackHistograms();     // Loader for track histograms
   void LoadTrackPairHistograms(); // Loader for track pair histograms
+  void LoadTrackPairHistogramsCloseToJets(); // Loader for track pair histograms close to jets
   
   // Generic setter for bin indice and borders
   void SetGenericBins(const bool readBinsFromFile, const char* histogramName, const int iAxis, int nSetBins, double* setBinBorders, int* setBinIndices, const int nBins, const double *binBorders, const char* errorMessage, const int maxBins, const bool setIndices); // Generic bin setter
@@ -244,9 +263,10 @@ private:
   int BinIndexCheck(const int nBins, const int binIndex) const; // Check that given index is in defined range
   
   // Methods for histogram writing
-  void WriteJetHistograms();           // Write the jet histograms to the file that is currently open
-  void WriteTrackHistograms();         // Write the track histograms to the file that is currently open
-  void WriteTrackPairHistograms();     // Write the track pair histograms to the file that is currently open
+  void WriteJetHistograms();                  // Write the jet histograms to the file that is currently open
+  void WriteTrackHistograms();                // Write the track histograms to the file that is currently open
+  void WriteTrackPairHistograms();            // Write the track pair histograms to the file that is currently open
+  void WriteTrackPairHistogramsCloseToJets(); // Write the track pair histograms close to jets to the file that is currently open
   
 };
 

@@ -31,6 +31,8 @@ void projectTrackPairEfficiencyHistograms(TString inputFileName = "veryCoolData.
   bool loadGenParticles = false;
   bool loadTrackPairHistograms = false;
   bool loadGenParticlePairHistograms = false;
+  bool loadTrackPairCloseToJetHistograms = false;
+  bool loadGenParticlePairCloseToJetHistograms = false;
   
   /*
    * Loading only selected histograms. Done with bitwise check of an integer
@@ -42,9 +44,11 @@ void projectTrackPairEfficiencyHistograms(TString inputFileName = "veryCoolData.
    *  Bit 4 = Load generator level particle histograms (to set: 16)
    *  Bit 5 = Load track pair histograms (to set: 32)
    *  Bit 6 = Load generator level particle pair histograms (to set: 64)
+   *  Bit 7 = Load track pair close to jet histograms (to set: 128)
+   *  Bit 8 = Load generator level particle pair close to jet histograms (to set: 256)
    */
   if(histogramSelection > 0){
-    std::bitset<7> bitChecker(histogramSelection);
+    std::bitset<9> bitChecker(histogramSelection);
     loadEventInformation = bitChecker.test(0);
     loadJets = bitChecker.test(1);
     loadTracks = bitChecker.test(2);
@@ -52,6 +56,8 @@ void projectTrackPairEfficiencyHistograms(TString inputFileName = "veryCoolData.
     loadGenParticles = bitChecker.test(4);
     loadTrackPairHistograms = bitChecker.test(5);
     loadGenParticlePairHistograms = bitChecker.test(6);
+    loadTrackPairCloseToJetHistograms = bitChecker.test(7);
+    loadGenParticlePairCloseToJetHistograms = bitChecker.test(8);
   }
   
   // ====================================================
@@ -62,15 +68,18 @@ void projectTrackPairEfficiencyHistograms(TString inputFileName = "veryCoolData.
   const bool readCentralityBinsFromFile = false;
   const bool readTrackPtBinsFromFile = true;
   const bool readTrackPairPtBinsFromFile = true;
+  const bool readJetPtBinsFromFile = true;
   
   // If not reading the bins from the file, manually define new bin borders
   const int nCentralityBins = 4;
   const int nTrackPtBins = 7;
   const int nTrackPairPtBins = 7;
+  const int nJetPtBins = 7;
   const int nAverageEtaBins = 6;
   double centralityBinBorders[nCentralityBins+1] = {4,14,34,54,94};      // Bin borders for centrality
   double trackPtBinBorders[nTrackPtBins+1] = {0.7,1,2,3,4,8,12,300};     // Bin borders for track pT
   double trackPairPtBinBorders[nTrackPtBins+1] = {0.7,1,2,3,4,8,12,300}; // Bin borders for track pT in track pair histograms
+  double jetPtBinBorders[nJetPtBins+1] = {120,140,160,180,200,300,500,5020}; // Bin borders for jet pT in energy-energy correlator histograms
   double averageEtaBinBorders[nAverageEtaBins+1] = {-2.4, -1, -0.5, 0, 0.5, 1, 2.4};  // Bin borders for average eta slices
   
   // Projected bin range
@@ -83,6 +92,9 @@ void projectTrackPairEfficiencyHistograms(TString inputFileName = "veryCoolData.
   int firstProjectedTrackPairPtBin = 0;
   int lastProjectedTrackPairPtBin = nTrackPairPtBins-1;
   
+  int firstProjectedJetPtBin = 0;
+  int lastProjectedJetPtBin = nJetPtBins;
+
   int firstProjectedAverageEtaBin = 0;
   int lastProjectedAverageEtaBin = nAverageEtaBins;  // Histograms without eta selection are in the last bin
 
@@ -115,6 +127,7 @@ void projectTrackPairEfficiencyHistograms(TString inputFileName = "veryCoolData.
   if(!readCentralityBinsFromFile) card->AddVector(TrackPairEfficiencyCard::kCentralityBinEdges,nCentralityBins+1,centralityBinBorders);
   if(!readTrackPtBinsFromFile) card->AddVector(TrackPairEfficiencyCard::kTrackPtBinEdges,nTrackPtBins+1,trackPtBinBorders);
   if(!readTrackPairPtBinsFromFile) card->AddVector(TrackPairEfficiencyCard::kTrackPairPtBinEdges,nTrackPairPtBins+1,trackPairPtBinBorders);
+  if(!readJetPtBinsFromFile) card->AddVector(TrackPairEfficiencyCard::kJetPtBinEdgesEEC,nJetPtBins+1,jetPtBinBorders);
   card->AddVector(TrackPairEfficiencyCard::kAverageEtaBinEdges,nAverageEtaBins+1,averageEtaBinBorders);
   
   // Add information about the used input files to the card
@@ -139,6 +152,8 @@ void projectTrackPairEfficiencyHistograms(TString inputFileName = "veryCoolData.
   histograms->SetLoadGenParticles(loadGenParticles);
   histograms->SetLoadTrackPairs(loadTrackPairHistograms);
   histograms->SetLoadGenParticlePairs(loadGenParticlePairHistograms);
+  histograms->SetLoadTrackPairsCloseToJets(loadTrackPairCloseToJetHistograms);
+  histograms->SetLoadGenParticlePairsCloseToJets(loadGenParticlePairCloseToJetHistograms);
   
   histograms->SetLoad2DHistograms(true);
 
@@ -149,6 +164,8 @@ void projectTrackPairEfficiencyHistograms(TString inputFileName = "veryCoolData.
   if(!readTrackPtBinsFromFile) histograms->SetTrackPtBinRange(firstProjectedTrackPtBin,lastProjectedTrackPtBin);
   histograms->SetTrackPairPtBins(readTrackPairPtBinsFromFile,nTrackPairPtBins,trackPairPtBinBorders,true);
   if(!readTrackPairPtBinsFromFile) histograms->SetTrackPairPtBinRange(firstProjectedTrackPairPtBin,lastProjectedTrackPairPtBin);
+  histograms->SetJetPtBins(readJetPtBinsFromFile, nJetPtBins, jetPtBinBorders, true);
+  if(!readJetPtBinsFromFile) histograms->SetJetPtBinRange(firstProjectedJetPtBin,lastProjectedJetPtBin);
   histograms->SetAverageEtaBins(false,nAverageEtaBins,averageEtaBinBorders,true);
   histograms->SetAverageEtaBinRange(firstProjectedAverageEtaBin,lastProjectedAverageEtaBin);
   

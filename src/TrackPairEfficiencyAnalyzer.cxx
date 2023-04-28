@@ -406,7 +406,7 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
     //         Main event loop for each file
     //************************************************
     
-    for(Int_t iEvent = 0; iEvent < nEvents; iEvent++){ // nEvents
+    for(Int_t iEvent = 0; iEvent < 10; iEvent++){ // nEvents
       
       //************************************************
       //         Read basic event information
@@ -647,6 +647,7 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
         
           // Check that all the track cuts are passed
           if(!PassTrackCuts(fEventReader,iTrack,fHistograms->fhTrackCuts,true)) continue;
+          cout << "Track cut passed!" << endl;
         
           // Get the track information and add it to vector
           trackPt = fEventReader->GetTrackPt(iTrack);
@@ -655,6 +656,7 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
           trackEfficiency = GetTrackEfficiencyCorrection(iTrack);
 
           if(GetDeltaR(jetEta, jetPhi, trackEta, trackPhi) < 0.4){
+            cout << "Track close to a jet!" << endl;
             selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, trackEfficiency));
           }
         
@@ -674,7 +676,8 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
         for(Int_t iTrack = 0; iTrack < nTracks; iTrack++){
         
           // Check that all the track cuts are passed
-          if(!PassGenParticleSelection(fEventReader,iTrack,fHistograms->fhTrackCuts,true)) continue;
+          if(!PassGenParticleSelection(fEventReader,iTrack,fHistograms->fhGenParticleSelections,true)) continue;
+          cout << "Gen particle selection passed!" << endl;
         
           // Get the track information and add it to vector
           trackPt = fEventReader->GetGenParticlePt(iTrack);
@@ -682,10 +685,11 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
           trackPhi = fEventReader->GetGenParticleEta(iTrack);
 
           if(GetDeltaR(jetEta, jetPhi, trackEta, trackPhi) < 0.4){
+            cout << "Gen particle close to a jet!" << endl;
             selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, 1));
           }
         
-        } // Track loop
+        } // Generator level particle loop
 
         FillTrackPairsCloseToJets(selectedTrackInformation, jetPt, centrality, TrackPairEfficiencyHistograms::kReconstructed, fHistograms->fhGenParticlePairsCloseToJet);
 
@@ -766,7 +770,7 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
           for(Int_t iTrack = 0; iTrack < nTracks; iTrack++){
 
             // Check that all the track cuts are passed
-            if(!PassGenParticleSelection(fEventReader, iTrack, fHistograms->fhTrackCuts, true)) continue;
+            if(!PassGenParticleSelection(fEventReader, iTrack, fHistograms->fhGenParticleSelections, true)) continue;
 
             // Get the track information and add it to vector
             trackPt = fEventReader->GetGenParticlePt(iTrack);
@@ -832,7 +836,7 @@ void TrackPairEfficiencyAnalyzer::FillTrackPairsCloseToJets(vector<std::tuple<do
       fillerTrackPair[3] = jetPt;                                                     // Axis 3: Jet pT
       fillerTrackPair[4] = iDataLevel;                                                // Axis 4: Reconstructed/generator level jet
       fillerTrackPair[5] = centrality;                                                // Axis 5: Centrality
-      fHistograms->fhTrackPairsCloseToJet->Fill(fillerTrackPair, fTotalEventWeight);  // Fill the track pair histogram close to jets
+      filledHistogram->Fill(fillerTrackPair, fTotalEventWeight);  // Fill the track pair histogram close to jets
 
     }  // Inner track loop
   }    // Outer track loop
