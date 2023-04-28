@@ -406,7 +406,7 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
     //         Main event loop for each file
     //************************************************
     
-    for(Int_t iEvent = 0; iEvent < 10; iEvent++){ // nEvents
+    for(Int_t iEvent = 0; iEvent < nEvents; iEvent++){ // nEvents
       
       //************************************************
       //         Read basic event information
@@ -647,7 +647,6 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
         
           // Check that all the track cuts are passed
           if(!PassTrackCuts(fEventReader,iTrack,fHistograms->fhTrackCuts,true)) continue;
-          cout << "Track cut passed!" << endl;
         
           // Get the track information and add it to vector
           trackPt = fEventReader->GetTrackPt(iTrack);
@@ -656,7 +655,6 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
           trackEfficiency = GetTrackEfficiencyCorrection(iTrack);
 
           if(GetDeltaR(jetEta, jetPhi, trackEta, trackPhi) < 0.4){
-            cout << "Track close to a jet!" << endl;
             selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, trackEfficiency));
           }
         
@@ -677,7 +675,6 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
         
           // Check that all the track cuts are passed
           if(!PassGenParticleSelection(fEventReader,iTrack,fHistograms->fhGenParticleSelections,true)) continue;
-          cout << "Gen particle selection passed!" << endl;
         
           // Get the track information and add it to vector
           trackPt = fEventReader->GetGenParticlePt(iTrack);
@@ -685,7 +682,6 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
           trackPhi = fEventReader->GetGenParticleEta(iTrack);
 
           if(GetDeltaR(jetEta, jetPhi, trackEta, trackPhi) < 0.4){
-            cout << "Gen particle close to a jet!" << endl;
             selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, 1));
           }
         
