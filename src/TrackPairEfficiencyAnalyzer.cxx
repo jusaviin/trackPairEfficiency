@@ -832,7 +832,7 @@ void TrackPairEfficiencyAnalyzer::FillTrackPairsCloseToJets(vector<std::tuple<do
       fillerTrackPair[3] = jetPt;                                                     // Axis 3: Jet pT
       fillerTrackPair[4] = iDataLevel;                                                // Axis 4: Reconstructed/generator level jet
       fillerTrackPair[5] = centrality;                                                // Axis 5: Centrality
-      filledHistogram->Fill(fillerTrackPair, fTotalEventWeight);  // Fill the track pair histogram close to jets
+      filledHistogram->Fill(fillerTrackPair, std::get<kTrackEfficiency>(selectedTrackInformation.at(iTrack)) * std::get<kTrackEfficiency>(selectedTrackInformation.at(jTrack)) * fTotalEventWeight);  // Fill the track pair histogram close to jets
 
     }  // Inner track loop
   }    // Outer track loop

@@ -656,7 +656,7 @@ void TrackPairEfficiencyHistogramManager::LoadTrackPairHistogramsCloseToJets(){
     if(!fLoadTrackPairsCloseToJets[iDataLevelTracks]) continue;  // Only load the selected track pair types
 
     // Find the histogram array from which the projections are made
-    THnSparseD *histogramArray = (THnSparseD *)fInputFile->Get(fTrackPairHistogramCloseToJetNames[iDataLevelTracks]);
+    THnSparseD* histogramArray = (THnSparseD*) fInputFile->Get(fTrackPairHistogramCloseToJetNames[iDataLevelTracks]);
 
     // Loop over data level for jets close to which the tracks are paired
     for(int iDataLevelJets = 0; iDataLevelJets < TrackPairEfficiencyHistograms::knDataLevels; iDataLevelJets++){
