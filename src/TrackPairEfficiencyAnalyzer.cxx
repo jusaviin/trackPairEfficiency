@@ -331,7 +331,7 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
   Double_t pairDeltaR = 0;          // DeltaR between the two tracks in a pair
   
   // Vectors of tuples to make the track pairing faster
-  vector<std::tuple<double,double,double,double,bool>> selectedTrackInformation;  // Track pT, eta, phi and efficiency for tracks passing the cuts
+  vector<std::tuple<double,double,double,double>> selectedTrackInformation;  // Track pT, eta, phi and efficiency for tracks passing the cuts
 
   // Variables for jets
   Int_t nJets = 0;                  // Number of jets in an event
@@ -474,7 +474,7 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
         trackEta = fEventReader->GetTrackEta(iTrack);
         trackPhi = fEventReader->GetTrackPhi(iTrack);
         trackEfficiency = GetTrackEfficiencyCorrection(iTrack);
-        selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, trackEfficiency, true));
+        selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, trackEfficiency));
         
         // Fill track histograms
         fillerTrack[0] = trackPt;      // Axis 0: Track pT
@@ -487,7 +487,7 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
       } // Track loop
       
       // Sort the vector such that the larger track pT will always be assigned to the first slot
-      std::sort(selectedTrackInformation.begin(), selectedTrackInformation.end(), std::greater<std::tuple<double,double,double,double,bool>>());
+      std::sort(selectedTrackInformation.begin(), selectedTrackInformation.end(), std::greater<std::tuple<double,double,double,double>>());
       
       // Once we have looped over all the tracks, only loop over tracks that pass the cuts to construct all possible track pairings
       for(Int_t iTrack = 0; iTrack < selectedTrackInformation.size(); iTrack++){
@@ -536,7 +536,7 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
           trackPt = fEventReader->GetGenParticlePt(iTrack);
           trackEta = fEventReader->GetGenParticleEta(iTrack);
           trackPhi = fEventReader->GetGenParticlePhi(iTrack);
-          selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, 1, true));
+          selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, 1));
           
           // Fill track histograms
           fillerTrack[0] = trackPt;      // Axis 0: Generator level particle pT
@@ -547,7 +547,7 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
         }
         
         // Sort the vector such that the larger track pT will always be assigned to the first slot
-        std::sort(selectedTrackInformation.begin(), selectedTrackInformation.end(), std::greater<std::tuple<double,double,double,double,bool>>());
+        std::sort(selectedTrackInformation.begin(), selectedTrackInformation.end(), std::greater<std::tuple<double,double,double,double>>());
         
         // Once we have looped over all the tracks, only loop over tracks that pass the cuts to construct all possible track pairings
         for(Int_t iTrack = 0; iTrack < selectedTrackInformation.size(); iTrack++){
@@ -654,9 +654,7 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
           trackEfficiency = GetTrackEfficiencyCorrection(iTrack);
 
           if(GetDeltaR(jetEta, jetPhi, trackEta, trackPhi) < 0.4){
-            selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, trackEfficiency, true));
-          } else {
-            selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, trackEfficiency, false));
+            selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, trackEfficiency));
           }
         
         } // Track loop
@@ -683,9 +681,7 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
           trackPhi = fEventReader->GetGenParticlePhi(iTrack);
 
           if(GetDeltaR(jetEta, jetPhi, trackEta, trackPhi) < 0.4){
-            selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, 1, true));
-          } else {
-            selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, 1, false));
+            selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, 1));
           }
         
         } // Generator level particle loop
@@ -750,9 +746,7 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
             trackEfficiency = GetTrackEfficiencyCorrection(iTrack);
 
             if(GetDeltaR(jetEta, jetPhi, trackEta, trackPhi) < 0.4){
-              selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, trackEfficiency, true));
-            } else {
-              selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, trackEfficiency, false));
+              selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, trackEfficiency));
             }
 
           }  // Track loop
@@ -779,9 +773,7 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
             trackPhi = fEventReader->GetGenParticleEta(iTrack);
 
             if(GetDeltaR(jetEta, jetPhi, trackEta, trackPhi) < 0.4){
-              selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, 1, true));
-            } else {
-              selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, 1, false));
+              selectedTrackInformation.push_back(std::make_tuple(trackPt, trackEta, trackPhi, 1));
             }
 
           }  // Track loop
@@ -810,27 +802,23 @@ void TrackPairEfficiencyAnalyzer::RunAnalysis(){
  * Fill the histograms for track pairs close to jets
  *
  *  Arguments:
- *   vector<std::tuple<double,double,double,double,bool>> selectedTrackInformation = pT, eta, phi and efficiency information for tracks that are paired and close to jets
+ *   vector<std::tuple<double,double,double,double>> selectedTrackInformation = pT, eta, phi and efficiency information for tracks that are paired and close to jets
  *   Double_t jetPt = pT of the jets these tracks are close to
  *   Double_t centrality = Centrality of the event
  *   Int_t iDataLevel = 0: Reconstructed jets, 1 = Generator level jets
  *   THnSparseF* filledHistogram = Histogram to which the pairs are filled
  */
-void TrackPairEfficiencyAnalyzer::FillTrackPairsCloseToJets(vector<std::tuple<double,double,double,double,bool>> selectedTrackInformation, Double_t jetPt, Double_t centrality, Int_t iDataLevel, THnSparseF* filledHistogram){
+void TrackPairEfficiencyAnalyzer::FillTrackPairsCloseToJets(vector<std::tuple<double,double,double,double>> selectedTrackInformation, Double_t jetPt, Double_t centrality, Int_t iDataLevel, THnSparseF* filledHistogram){
 
   // Helper variables
   Double_t fillerTrackPair[6];      // Track pair histogram filler
   Double_t pairDeltaR;
 
   // Sort the vector such that the larger track pT will always be assigned to the first slot
-  std::sort(selectedTrackInformation.begin(), selectedTrackInformation.end(), std::greater<std::tuple<double, double, double, double, bool>>());
+  std::sort(selectedTrackInformation.begin(), selectedTrackInformation.end(), std::greater<std::tuple<double, double, double, double>>());
 
-  // Once we have looped over the selected tracks
+  // Loop over the sorted tracks
   for(Int_t iTrack = 0; iTrack < selectedTrackInformation.size(); iTrack++) {
-
-    // Require that the trigger track is close to a jet
-    if(!std::get<kCloseToJet>(selectedTrackInformation.at(iTrack))) continue;
-
     for(Int_t jTrack = iTrack + 1; jTrack < selectedTrackInformation.size(); jTrack++) {
 
       // Calculate the distance of the two tracks from each other
