@@ -30,7 +30,7 @@ class TrackPairEfficiencyAnalyzer{
 private:
   
   enum enumSubeventCuts{kSubeventZero,kSubeventNonZero,kSubeventAny,knSubeventCuts}; // Cuts for subevent index
-  enum enumTupleDecoder{kTrackPt, kTrackEta, kTrackPhi, kTrackEfficiency}; // Components of the n-tuple in track vector
+  enum enumTupleDecoder{kTrackPt, kTrackEta, kTrackPhi, kTrackEfficiency, kCloseToJet}; // Components of the n-tuple in track vector
   
 public:
   
@@ -49,7 +49,7 @@ private:
   
   // Private methods
   void ReadConfigurationFromCard(); // Read all the configuration from the input card
-  void FillTrackPairsCloseToJets(vector<std::tuple<double,double,double,double>> selectedTrackInformation, Double_t jetPt, Double_t centrality, Int_t iDataLevel, THnSparseF* filledHistogram); // Fill the histograms with track pairs close to jets
+  void FillTrackPairsCloseToJets(vector<std::tuple<double,double,double,double,bool>> selectedTrackInformation, Double_t jetPt, Double_t centrality, Int_t iDataLevel, THnSparseF* filledHistogram); // Fill the histograms with track pairs close to jets
   
   Bool_t PassEventCuts(ForestReader *eventReader); // Check if the event passes the event cuts
   Double_t GetVzWeight(const Double_t vz) const;  // Get the proper vz weighting depending on analyzed system
