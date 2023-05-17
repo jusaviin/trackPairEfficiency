@@ -9,7 +9,7 @@
 void trackPairEfficiencyPlotter(){
   
   // File containing the track pair distributions used to determine the track pair efficiency
-  TString fileName = "data/trackPairEfficiency_triggerFiducialCut_32DeltaRBins_processed_2023-05-16.root";
+  TString fileName = "data/trackPairEfficiencyPp_triggerEta1p6_32DeltaRBins_processed_2023-05-16.root";
   // trackPairEfficiencyPp_triggerEta1p6_newBins_processed_2023-04-10.root
   // trackPairEfficiency_triggerFiducialCut_newBins_fixedCentrality_processed_2023-04-10.root
   // trackPairEfficiencyPp_triggerEta1p6_32DeltaRBins_processed_2023-05-16.root
@@ -41,7 +41,7 @@ void trackPairEfficiencyPlotter(){
   
   // Select the bin range to be drawn
   const int firstDrawnCentralityBin = 0;
-  const int lastDrawnCentralityBin = nCentralityBins-1;
+  const int lastDrawnCentralityBin = 0;
   
   const int firstDrawnTriggerPtBin = 5;
   const int lastDrawnTriggerPtBin = 5;
@@ -71,9 +71,15 @@ void trackPairEfficiencyPlotter(){
   const bool drawEtaRegionComparison = false;    // Draw the figures comparing the different average eta selections for the same pT and centrality bins
   const bool drawJetPtComparison = false;         // Draw the comparison of different jet pT selections to see if there is a trend
   
+  // Axis zoom for the drawn histgrams
+  const double minXzoom = 0.006;
+  const double maxXzoom = 0.39;
+  const double minRatioZoom = 0.4;
+  const double maxRatioZoom = 1.6;
+
   // Figure saving
   const bool saveFigures = true;  // Save figures
-  const char* saveComment = "_pythiaHydjetZoom";   // Comment given for this specific file
+  const char* saveComment = "_pythia";   // Comment given for this specific file
   const char* figureFormat = "pdf"; // Format given for the figures
   
   // Histogram saving
@@ -207,12 +213,10 @@ void trackPairEfficiencyPlotter(){
   
   JDrawer* drawer = new JDrawer();
   TLegend* legend;
-  //TLine *oneLine = new TLine(0,1,500,1);
-  //oneLine->SetLineStyle(2);
-  //oneLine->SetLineColor(kBlack);
-  //TLine *oneTwentyLine = new TLine(120,0,120,1.3);
-  //oneTwentyLine->SetLineStyle(2);
-  //oneTwentyLine->SetLineColor(kRed);
+  TLine* oneLine = new TLine(minXzoom,1,maxXzoom,1);
+  oneLine->SetLineStyle(2);
+  oneLine->SetLineColor(kBlack);
+
   TString centralityString;
   TString compactCentralityString;
   TString triggerPtString;
@@ -228,6 +232,9 @@ void trackPairEfficiencyPlotter(){
   // Selection of colors and styles
   int color[] = {kBlack,kRed,kBlue,kGreen+2,kMagenta,kCyan,kOrange,kViolet+3,kPink-7,kSpring+3,kAzure-7};
   int markerStyle[] = {kOpenSquare, kOpenCircle, kOpenDiamond, kOpenCross, kOpenTriangleUp, kOpenTriangleDown, kOpenStar, kOpenCrossX, kOpenDoubleDiamond, kOpenFourTrianglesPlus};
+
+  // Use logarithmic x-axis for the figures
+  drawer->SetLogX(true);
   
   // Draw the track pair efficiency histogram comparison with the smoothed histograms
   if(drawDistributionComparison){
@@ -269,6 +276,7 @@ void trackPairEfficiencyPlotter(){
             legend->SetFillStyle(0);legend->SetBorderSize(0);legend->SetTextSize(0.05);legend->SetTextFont(62);
             
             // Draw the track pair efficiency
+            hTrackDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta][TrackPairEfficiencyHistograms::kReconstructed]->GetXaxis()->SetRangeUser(minXzoom,maxXzoom);
             drawer->DrawHistogram(hTrackDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta][TrackPairEfficiencyHistograms::kReconstructed], "#DeltaR", "Track pair yield", " ");
             
             // Draw the smoothed histogram to the same figure
@@ -341,8 +349,8 @@ void trackPairEfficiencyPlotter(){
             legend->SetFillStyle(0);legend->SetBorderSize(0);legend->SetTextSize(0.05);legend->SetTextFont(62);
             
             // Draw the track pair efficiency
-            hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta]->GetYaxis()->SetRangeUser(0,2);
-            hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta]->GetXaxis()->SetRangeUser(0.006,0.06);
+            hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta]->GetYaxis()->SetRangeUser(minRatioZoom,maxRatioZoom);
+            hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta]->GetXaxis()->SetRangeUser(minXzoom,maxXzoom);
             drawer->DrawHistogram(hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta], "#DeltaR", "Track pair efficiency", " ");
             
             // Draw the smoothed histogram to the same figure
@@ -360,9 +368,8 @@ void trackPairEfficiencyPlotter(){
             // Draw the legend
             legend->Draw();
             
-            // Draw a lines to one and 120 GeV
-            //oneLine->Draw("same");
-            //oneTwentyLine->Draw("same");
+            // Draw a lines to one
+            oneLine->Draw("same");
             
             // Save the figures to a file
             if(saveFigures){
@@ -405,8 +412,8 @@ void trackPairEfficiencyPlotter(){
         legend->SetFillStyle(0);legend->SetBorderSize(0);legend->SetTextSize(0.05);legend->SetTextFont(62);
         
         // Draw the track pair efficiency in the first pT bin
-        hRatioDeltaR[iCentrality][firstDrawnTriggerPtBin][firstDrawnTriggerPtBin][iAverageEta]->GetYaxis()->SetRangeUser(0,2);
-        hRatioDeltaR[iCentrality][firstDrawnTriggerPtBin][firstDrawnTriggerPtBin][iAverageEta]->GetXaxis()->SetRangeUser(0,0.06);
+        hRatioDeltaR[iCentrality][firstDrawnTriggerPtBin][firstDrawnTriggerPtBin][iAverageEta]->GetYaxis()->SetRangeUser(minRatioZoom,maxRatioZoom);
+        hRatioDeltaR[iCentrality][firstDrawnTriggerPtBin][firstDrawnTriggerPtBin][iAverageEta]->GetXaxis()->SetRangeUser(minXzoom,maxXzoom);
         hRatioDeltaR[iCentrality][firstDrawnTriggerPtBin][firstDrawnTriggerPtBin][iAverageEta]->SetLineColor(color[0]);
         hRatioDeltaR[iCentrality][firstDrawnTriggerPtBin][firstDrawnTriggerPtBin][iAverageEta]->SetMarkerColor(color[0]);
         hRatioDeltaR[iCentrality][firstDrawnTriggerPtBin][firstDrawnTriggerPtBin][iAverageEta]->SetMarkerStyle(markerStyle[0]);
@@ -481,8 +488,8 @@ void trackPairEfficiencyPlotter(){
           hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][firstDrawnAverageEtaBin]->SetLineColor(color[0]);
           hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][firstDrawnAverageEtaBin]->SetMarkerColor(color[0]);
           hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][firstDrawnAverageEtaBin]->SetMarkerStyle(markerStyle[0]);
-          hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][firstDrawnAverageEtaBin]->GetYaxis()->SetRangeUser(0,2);
-          hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][firstDrawnAverageEtaBin]->GetXaxis()->SetRangeUser(0,0.06);
+          hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][firstDrawnAverageEtaBin]->GetYaxis()->SetRangeUser(minRatioZoom,maxRatioZoom);
+          hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][firstDrawnAverageEtaBin]->GetXaxis()->SetRangeUser(minXzoom,maxXzoom);
           drawer->DrawHistogram(hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][firstDrawnAverageEtaBin], "#DeltaR", "Track pair efficiency", " ");
           
           // Draw the other average eta bins to the same figure
@@ -576,8 +583,8 @@ void trackPairEfficiencyPlotter(){
           hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][firstDrawnJetPtBin]->SetLineColor(color[0]);
           hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][firstDrawnJetPtBin]->SetMarkerColor(color[0]);
           hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][firstDrawnJetPtBin]->SetMarkerStyle(markerStyle[0]);
-          hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][firstDrawnJetPtBin]->GetYaxis()->SetRangeUser(0,2);
-          hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][firstDrawnJetPtBin]->GetXaxis()->SetRangeUser(0.006,0.06);
+          hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][firstDrawnJetPtBin]->GetYaxis()->SetRangeUser(minRatioZoom,maxRatioZoom);
+          hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][firstDrawnJetPtBin]->GetXaxis()->SetRangeUser(minXzoom,maxXzoom);
           drawer->DrawHistogram(hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][firstDrawnJetPtBin], "#DeltaR", "Track pair efficiency", " ");
           
           // Draw the other jet pT bins to the same figure
