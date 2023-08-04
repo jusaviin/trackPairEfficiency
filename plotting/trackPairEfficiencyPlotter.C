@@ -9,11 +9,15 @@
 void trackPairEfficiencyPlotter(){
   
   // File containing the track pair distributions used to determine the track pair efficiency
-  TString fileName = "data/trackPairEfficiencyPp_triggerEta1p6_32DeltaRBins_processed_2023-05-16.root";
+  TString fileName = "data/trackPairEfficiencyPp_triggerEta1p6_32DeltaRBins_processed_2023-07-11.root";
   // trackPairEfficiencyPp_triggerEta1p6_newBins_processed_2023-04-10.root
   // trackPairEfficiency_triggerFiducialCut_newBins_fixedCentrality_processed_2023-04-10.root
   // trackPairEfficiencyPp_triggerEta1p6_32DeltaRBins_processed_2023-05-16.root
+  // trackPairEfficiencyPp_triggerEta1p6_32DeltaRBins_combineHighestTrackPtBins_processed_2023-05-16.root
   // trackPairEfficiency_triggerFiducialCut_32DeltaRBins_processed_2023-05-16.root
+  // trackPairEfficiency_triggerFiducialCut_32DeltaRBins_combineHighestTrackPtBins_processed_2023-05-16.root
+  // trackPairEfficiency_triggerFiducialCut_32DeltaRBins_processed_2023-07-11.root
+  // trackPairEfficiencyPp_triggerEta1p6_32DeltaRBins_processed_2023-07-11.root
   
   // Open the file and check that it exists
   TFile* inputFile = TFile::Open(fileName);
@@ -41,7 +45,7 @@ void trackPairEfficiencyPlotter(){
   
   // Select the bin range to be drawn
   const int firstDrawnCentralityBin = 0;
-  const int lastDrawnCentralityBin = 0;
+  const int lastDrawnCentralityBin = nCentralityBins-1;
   
   const int firstDrawnTriggerPtBin = 5;
   const int lastDrawnTriggerPtBin = 5;
@@ -65,11 +69,12 @@ void trackPairEfficiencyPlotter(){
   }
   
   // Histogram drawing
-  const bool drawDistributionComparison = false; // Draw the comparison of the raw distributions
-  const bool drawSmoothedComparison = true;     // Draw the figures comparing smoothed and non-smoothed distributions in each bin
-  const bool drawPtBinComparison = false;        // Draw a comparison of different pT bins to find pT trends
-  const bool drawEtaRegionComparison = false;    // Draw the figures comparing the different average eta selections for the same pT and centrality bins
-  const bool drawJetPtComparison = false;         // Draw the comparison of different jet pT selections to see if there is a trend
+  const bool drawDistributionComparison = false;       // Draw the comparison of the raw distributions
+  const bool drawSmoothedComparison = true;           // Draw the figures comparing smoothed and non-smoothed distributions in each bin
+  const bool drawPtBinComparison = false;              // Draw a comparison of different pT bins to find pT trends
+  const bool drawEtaRegionComparison = false;          // Draw the figures comparing the different average eta selections for the same pT and centrality bins
+  const bool drawJetPtComparison = false;              // Draw the comparison of different jet pT selections to see if there is a trend
+  const bool drawSmoothedComparisonCloseToJets = false; // Draw the figures comparing smoothed and non-smoothed distributions close to jets
   
   // Axis zoom for the drawn histgrams
   const double minXzoom = 0.006;
@@ -83,10 +88,10 @@ void trackPairEfficiencyPlotter(){
   const char* figureFormat = "pdf"; // Format given for the figures
   
   // Histogram saving
-  const bool writeSmoothedHistograms = false; // Write flag for smoothed histograms
+  const bool writeCorrectionToFile = false; // Write flag for the correction histograms
   
   // Create and setup a new histogram managers to project and handle the histograms
-  TrackPairEfficiencyHistogramManager *histograms;
+  TrackPairEfficiencyHistogramManager* histograms;
   histograms = new TrackPairEfficiencyHistogramManager(inputFile);
   histograms->SetCentralityBinRange(firstDrawnCentralityBin, lastDrawnCentralityBin);
   histograms->SetTrackPairPtBinRange(TMath::Min(firstDrawnTriggerPtBin, firstDrawnAssociatedPtBin), TMath::Max(lastDrawnTriggerPtBin, lastDrawnAssociatedPtBin));
@@ -102,6 +107,7 @@ void trackPairEfficiencyPlotter(){
   TH1D* hRatioDeltaR[nCentralityBins][nTrackPtBins][nTrackPtBins][nAverageEtaBins+1]; // Reconstructed to generator level ratio of track pair DeltaR distributions
   TH1D* hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::knDataLevels][nCentralityBins][nTrackPtBins][nTrackPtBins][nJetPtBins+1]; // Reconstructed to generator level ratio of track pair DeltaR distributions close to jets
   TH1D* hRatioDeltaRSmoothed[nCentralityBins][nTrackPtBins][nTrackPtBins][nAverageEtaBins+1]; // Smoothed reconstructed to generator level ratio of track pair DeltaR distributions
+  TH1D* hRatioDeltaRCloseToJetSmoothed[TrackPairEfficiencyHistograms::knDataLevels][nCentralityBins][nTrackPtBins][nTrackPtBins][nJetPtBins+1]; // Reconstructed to generator level ratio of track pair DeltaR distributions close to jets
   
   // Initialize all histograms to NULL
   for(int iCentrality = 0; iCentrality < nCentralityBins; iCentrality++){
@@ -113,6 +119,7 @@ void trackPairEfficiencyPlotter(){
               hTrackDeltaRCloseToJet[iDataLevelJets][iDataLevelTracks][iCentrality][iTriggerPt][iAssociatedPt][iJetPt] = NULL;
             } // Track data level loop
             hRatioDeltaRCloseToJet[iDataLevelJets][iCentrality][iTriggerPt][iAssociatedPt][iJetPt] = NULL;
+            hRatioDeltaRCloseToJetSmoothed[iDataLevelJets][iCentrality][iTriggerPt][iAssociatedPt][iJetPt] = NULL;
           } // Data level loop for jets
         } // Jet pT loop
 
@@ -200,6 +207,16 @@ void trackPairEfficiencyPlotter(){
 
           hRatioDeltaRCloseToJet[iDataLevelJets][iCentrality][iTriggerPt][iAssociatedPt][iJetPt] = (TH1D*) hTrackDeltaRCloseToJet[iDataLevelJets][TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->Clone(histogramNamer.Data());
           hRatioDeltaRCloseToJet[iDataLevelJets][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->Divide(hTrackDeltaRCloseToJet[iDataLevelJets][TrackPairEfficiencyHistograms::kGeneratorLevel][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]);
+
+          // Use the smoothing also for close-to-jet distributions to suppress fluctuations in the correction
+          // Then, calculate the ratio of the histograms
+          if(iJetPt == nJetPtBins){
+            histogramNamer = Form("smoothedTrackPairEfficiencyCorrectionCloseTo%sJet_C%dT%dA%d", histograms->GetDataLevelName(iDataLevelJets), iCentrality, iTriggerPt, iAssociatedPt);
+          } else {
+            histogramNamer = Form("smoothedTrackPairEfficiencyCorrectionCloseTo%sJet_C%dT%dA%dJ%d", histograms->GetDataLevelName(iDataLevelJets), iCentrality, iTriggerPt, iAssociatedPt, iJetPt);
+          }
+          hRatioDeltaRCloseToJetSmoothed[iDataLevelJets][iCentrality][iTriggerPt][iAssociatedPt][iJetPt] = (TH1D*) hRatioDeltaRCloseToJet[iDataLevelJets][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->Clone(histogramNamer.Data());
+          hRatioDeltaRCloseToJetSmoothed[iDataLevelJets][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->Smooth();
 
           } // Jet pT loop
         } // Data level loop for jets
@@ -351,11 +368,11 @@ void trackPairEfficiencyPlotter(){
             // Draw the track pair efficiency
             hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta]->GetYaxis()->SetRangeUser(minRatioZoom,maxRatioZoom);
             hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta]->GetXaxis()->SetRangeUser(minXzoom,maxXzoom);
-            drawer->DrawHistogram(hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta], "#DeltaR", "Track pair efficiency", " ");
+            drawer->DrawHistogram(hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta], "#DeltaR", "Reco yield / Gen yield", " ");
             
             // Draw the smoothed histogram to the same figure
-            //hRatioDeltaRSmoothed[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta]->SetLineColor(kRed);
-            //hRatioDeltaRSmoothed[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta]->Draw("same");
+            hRatioDeltaRSmoothed[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta]->SetLineColor(kRed);
+            hRatioDeltaRSmoothed[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta]->Draw("same");
             
             // Add information to legend
             legend->AddEntry((TObject*)0, centralityString.Data(), "");
@@ -363,7 +380,7 @@ void trackPairEfficiencyPlotter(){
             legend->AddEntry((TObject*)0, associatedPtString.Data(), "");
             if(iAverageEta < nAverageEtaBins) legend->AddEntry((TObject*)0, averageEtaString.Data(), "");
             legend->AddEntry(hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta], "Yield ratio", "l");
-            //legend->AddEntry(hRatioDeltaRSmoothed[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta], "Smoothed ratio", "l");
+            legend->AddEntry(hRatioDeltaRSmoothed[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta], "Smoothed ratio", "l");
             
             // Draw the legend
             legend->Draw();
@@ -626,27 +643,101 @@ void trackPairEfficiencyPlotter(){
       } // Trigger particle pT loop
     } // Centrality loop
   } // Draw the eta region comparison
+
+  // Draw the track pair efficiency histogram comparison with the smoothed histograms
+  if(drawSmoothedComparisonCloseToJets){
+    for(int iCentrality = firstDrawnCentralityBin; iCentrality <= lastDrawnCentralityBin; iCentrality++){
+      
+      if(isPbPbData){
+        centralityString = Form("Centrality: %.0f-%.0f", systemCard->GetLowBinBorderCentrality(iCentrality), systemCard->GetHighBinBorderCentrality(iCentrality));
+        compactCentralityString = Form("_C%.0f-%.0f", systemCard->GetLowBinBorderCentrality(iCentrality), systemCard->GetHighBinBorderCentrality(iCentrality));
+      } else {
+        centralityString = "pp";
+        compactCentralityString = "_pp";
+      }
+      
+      for(int iTriggerPt = firstDrawnTriggerPtBin; iTriggerPt <= lastDrawnTriggerPtBin; iTriggerPt++){
+        
+        triggerPtString = Form("%.1f < p_{T,t} < %.1f GeV", systemCard->GetLowBinBorderTrackPairPt(iTriggerPt), systemCard->GetHighBinBorderTrackPairPt(iTriggerPt));
+        compactTriggerPtString = Form("_T%.0f-%.0f", systemCard->GetLowBinBorderTrackPairPt(iTriggerPt), systemCard->GetHighBinBorderTrackPairPt(iTriggerPt));
+        
+        for(int iAssociatedPt = firstDrawnAssociatedPtBin; iAssociatedPt <= TMath::Min(iTriggerPt, lastDrawnAssociatedPtBin); iAssociatedPt++){
+          
+          associatedPtString = Form("%.1f < p_{T,a} < %.1f GeV", systemCard->GetLowBinBorderTrackPairPt(iAssociatedPt), systemCard->GetHighBinBorderTrackPairPt(iAssociatedPt));
+          compactAssociatedPtString = Form("_A%.0f-%.0f", systemCard->GetLowBinBorderTrackPairPt(iAssociatedPt), systemCard->GetHighBinBorderTrackPairPt(iAssociatedPt));
+          
+          for(int iJetPt = firstDrawnJetPtBin; iJetPt <= lastDrawnJetPtBin; iJetPt++){
+            
+            if(iJetPt < nJetPtBins){
+              jetPtString = Form("%.0f < jet p_{T} < %.0f", systemCard->GetLowBinBorderJetPt(iJetPt), systemCard->GetHighBinBorderJetPt(iJetPt));
+              compactJetPtString = Form("_J%.0f-%.0f", systemCard->GetLowBinBorderJetPt(iJetPt), systemCard->GetHighBinBorderJetPt(iJetPt));
+            } else {
+              jetPtString = Form("%.0f < jet p_{T} < %.1f", systemCard->GetLowBinBorderJetPt(0), systemCard->GetHighBinBorderJetPt(nJetPtBins-1));
+              compactJetPtString = Form("_J%.0f-%.0f", systemCard->GetLowBinBorderJetPt(0), systemCard->GetHighBinBorderJetPt(nJetPtBins-1));
+            }
+            
+            // Create a legend for the figure
+            legend = new TLegend(0.2,0.58,0.5,0.92);
+            legend->SetFillStyle(0);legend->SetBorderSize(0);legend->SetTextSize(0.05);legend->SetTextFont(62);
+            
+            // Draw the track pair efficiency
+            hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->GetYaxis()->SetRangeUser(minRatioZoom,maxRatioZoom);
+            hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->GetXaxis()->SetRangeUser(minXzoom,maxXzoom);
+            drawer->DrawHistogram(hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][iJetPt], "#DeltaR", "Track pair efficiency", " ");
+            
+            // Draw the smoothed histogram to the same figure
+            hRatioDeltaRCloseToJetSmoothed[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->SetLineColor(kRed);
+            hRatioDeltaRCloseToJetSmoothed[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->Draw("same");
+            
+            // Add information to legend
+            legend->AddEntry((TObject*)0, centralityString.Data(), "");
+            legend->AddEntry((TObject*)0, jetPtString.Data(), "");
+            legend->AddEntry((TObject*)0, triggerPtString.Data(), "");
+            legend->AddEntry((TObject*)0, associatedPtString.Data(), "");
+            legend->AddEntry(hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][iJetPt], "Yield ratio", "l");
+            legend->AddEntry(hRatioDeltaRCloseToJetSmoothed[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][iJetPt], "Smoothed ratio", "l");
+            
+            // Draw the legend
+            legend->Draw();
+            
+            // Draw a lines to one
+            oneLine->Draw("same");
+            
+            // Save the figures to a file
+            if(saveFigures){
+              gPad->GetCanvas()->SaveAs(Form("figures/trackPairEfficiencyCloseToJets%s%s%s%s%s.%s", saveComment, compactCentralityString.Data(), compactTriggerPtString.Data(), compactAssociatedPtString.Data(), compactJetPtString.Data(), figureFormat));
+            }
+            
+          } // Jet pT loop
+        } // Associated particle pT loop
+      } // Trigger particle pT loop
+    } // Centrality loop
+  } // Draw the smoothed comparison
   
   // Option to write the smoothed histograms to a file to be used as correction
-  if(writeSmoothedHistograms){
-    TFile* outputFile = TFile::Open("trackPairEfficiencyCorrectionTableCloseToJet_pp2017_2023-05-03.root","RECREATE");
+  if(writeCorrectionToFile){
+    TFile* outputFile = TFile::Open("trackPairEfficiencyCorrection_PbPb2018_32DeltaRBins_noSmoothing_2023-07-13.root","RECREATE");
     
     for(int iCentrality = firstDrawnCentralityBin; iCentrality <= lastDrawnCentralityBin; iCentrality++){
       for(int iTriggerPt = firstDrawnTriggerPtBin; iTriggerPt <= lastDrawnTriggerPtBin; iTriggerPt++){
         for(int iAssociatedPt = firstDrawnAssociatedPtBin; iAssociatedPt <= iTriggerPt; iAssociatedPt++){
           for(int iAverageEta = firstDrawnAverageEtaBin; iAverageEta <= lastDrawnAverageEtaBin; iAverageEta++){
             hRatioDeltaR[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta]->Write();
-            hRatioDeltaRSmoothed[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta]->Write();
+            //hRatioDeltaRSmoothed[iCentrality][iTriggerPt][iAssociatedPt][iAverageEta]->Write();
           } // Average pair eta loop
           for(int iJetPt = firstDrawnJetPtBin; iJetPt <= lastDrawnJetPtBin; iJetPt++){
             hRatioDeltaRCloseToJet[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->Write();
+            //hRatioDeltaRCloseToJetSmoothed[TrackPairEfficiencyHistograms::kReconstructed][iCentrality][iTriggerPt][iAssociatedPt][iJetPt]->Write();
           }
-        } // Associated pT loo
+        } // Associated pT loop
       } // Trigger pT loop
     } // Centrality loop
     
     // Write the card to the file
     systemCard->Write(outputFile);
+
+    // Close the output file
+    outputFile->Close();
   }
   
 }

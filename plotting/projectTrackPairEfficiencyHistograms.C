@@ -73,12 +73,12 @@ void projectTrackPairEfficiencyHistograms(TString inputFileName = "veryCoolData.
   // If not reading the bins from the file, manually define new bin borders
   const int nCentralityBins = 4;
   const int nTrackPtBins = 7;
-  const int nTrackPairPtBins = 7;
+  const int nTrackPairPtBins = 10;
   const int nJetPtBins = 7;
   const int nAverageEtaBins = 6;
   double centralityBinBorders[nCentralityBins+1] = {4,14,34,54,94};      // Bin borders for centrality
   double trackPtBinBorders[nTrackPtBins+1] = {0.7,1,2,3,4,8,12,300};     // Bin borders for track pT
-  double trackPairPtBinBorders[nTrackPtBins+1] = {0.7,1,2,3,4,8,12,300}; // Bin borders for track pT in track pair histograms
+  double trackPairPtBinBorders[nTrackPairPtBins+1] = {0.7,1,2,3,4,6,8,12,16,20,300}; // Bin borders for track pT in track pair histograms
   double jetPtBinBorders[nJetPtBins+1] = {120,140,160,180,200,300,500,5020}; // Bin borders for jet pT in energy-energy correlator histograms
   double averageEtaBinBorders[nAverageEtaBins+1] = {-2.4, -1, -0.5, 0, 0.5, 1, 2.4};  // Bin borders for average eta slices
   
