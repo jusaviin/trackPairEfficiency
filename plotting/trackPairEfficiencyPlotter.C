@@ -9,7 +9,7 @@
 void trackPairEfficiencyPlotter(){
   
   // File containing the track pair distributions used to determine the track pair efficiency
-  TString fileName = "data/trackPairEfficiencyPp_triggerEta1p6_32DeltaRBins_processed_2023-07-11.root";
+  TString fileName = "data/trackPairEfficiency_triggerFiducialCut_32DeltaRBins_processed_2023-07-11.root";
   // trackPairEfficiencyPp_triggerEta1p6_newBins_processed_2023-04-10.root
   // trackPairEfficiency_triggerFiducialCut_newBins_fixedCentrality_processed_2023-04-10.root
   // trackPairEfficiencyPp_triggerEta1p6_32DeltaRBins_processed_2023-05-16.root
@@ -47,10 +47,10 @@ void trackPairEfficiencyPlotter(){
   const int firstDrawnCentralityBin = 0;
   const int lastDrawnCentralityBin = nCentralityBins-1;
   
-  const int firstDrawnTriggerPtBin = 5;
-  const int lastDrawnTriggerPtBin = 5;
+  const int firstDrawnTriggerPtBin = 3;
+  const int lastDrawnTriggerPtBin = 8;
   
-  const int firstDrawnAssociatedPtBin = 3;
+  const int firstDrawnAssociatedPtBin = 1;
   const int lastDrawnAssociatedPtBin = 3;
 
   const int firstDrawnJetPtBin = 0;
@@ -77,13 +77,13 @@ void trackPairEfficiencyPlotter(){
   const bool drawSmoothedComparisonCloseToJets = false; // Draw the figures comparing smoothed and non-smoothed distributions close to jets
   
   // Axis zoom for the drawn histgrams
-  const double minXzoom = 0.006;
+  const double minXzoom = 0.008;
   const double maxXzoom = 0.39;
   const double minRatioZoom = 0.4;
   const double maxRatioZoom = 1.6;
 
   // Figure saving
-  const bool saveFigures = true;  // Save figures
+  const bool saveFigures = false;  // Save figures
   const char* saveComment = "_pythia";   // Comment given for this specific file
   const char* figureFormat = "pdf"; // Format given for the figures
   
